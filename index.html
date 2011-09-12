@@ -1,1 +1,171 @@
-Hello, cube!
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <title>Cube</title>
+    <style type="text/css">
+
+@import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+@import url(style.css);
+
+    </style>
+  </head>
+  <body>
+
+<h1>Cube</h1>
+
+<header>
+  <a href="#">Overview</a>
+  <a href="http://github.com/square/cube/wiki">Documentation</a>
+  <a href="http://github.com/square/cube">Source</a>
+  <div style="float:right;"><a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal">Tweet</a><script defer type="text/javascript" src="http://platform.twitter.com/widgets.js"></script></div>
+</header>
+
+<h2>Time Series Visualization</h2>
+
+<p>Cube is an open-source system for visualizing <a href="http://en.wikipedia.org/wiki/Time_series">time series</a> data, built on <a href="http://mongodb.org">MongoDB</a>, <a href="http://nodejs.org">Node</a> and <a href="http://mbostock.github.com/d3">D3</a>. If you send Cube timestamped events (with optional structured data), you can easily build realtime visualizations of aggregate metrics for internal dashboards. For example, you might use Cube to monitor traffic to your website, counting the number of requests in 5-minute intervals:</p>
+
+<pre class="curl image" style="background-image:url(request-count.png);"><code>sum(request)</code></pre>
+
+<p>By applying <code>median</code> rather than <code>sum</code>, you can instead observe request duration:</p>
+
+<pre class="curl image" style="background-image:url(request-duration.png);"><code>median(request(duration_ms))</code></pre>
+
+<p>Cube supports filters for aggregating a subset of events: you might filter requests for a specific path, host, or user-agent. Or perhaps plot the count of slow requests (>500ms) over time. You can also evaluate arithmetic expressions, even combining multiple event types, say to compare requests to signups for conversion tracking.</p>
+
+<p>Cube speaks <a href="http://www.w3.org/TR/websockets/">WebSockets</a> for low-latency, asynchronous input and output: new events are streamed in, and requested metrics are streamed out as they are computed. (You can also POST events to Cube, if that’s your thing, and <a href="http://collectd.org/">collectd</a> integration is included!) Metrics are cached in capped collections, and simple reductions such as <code>sum</code> and <code>max</code> use pyramidal aggregation to improve performance. Visualizations are generated client-side and assembled into dashboards with a few mouse clicks.</p>
+
+<h2>Building a Dashboard in 60 Seconds <a href="#video" name="video">#</a></h2>
+
+<aside>
+  <p>This video shows a simple dashboard (with fake data) built in sixty seconds. That time doesn’t include writing the required event emitter, but examples are available in the repository.</p>
+
+  <p>Cube has a handful of chart types that you can assemble into dashboards. We’re working on more advanced charts, richer queries and coordinated views for interactive filtering.</p>
+</aside>
+
+<iframe width="640" height="385" style="border:solid 1px #666;"
+  src="http://www.youtube.com/embed/oq0qEu1dDdA"
+  frameborder="0" hd="1" allowfullscreen></iframe>
+
+<h2>Collecting Data <a href="#collect" name="collect">#</a></h2>
+
+<p>Events are streamed into Cube in <a href="http://json.org">JSON</a> format. Each event has two required fields: <code>type</code> and <code>time</code>. The <em>type</em> is a namespace for partitioning events; each type will be stored in a separate collection, and you can customize the associated indexes or metric cache size. The <em>time</em> is specified in <a href="http://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a>.  An optional <code>data</code> field contains whatever else you want to associate with the event.</p>
+
+<aside class="pre">
+  <p>Here’s how you might represent a request to your website. Note that the request’s search query is parsed and represented as an object rather than a string; this makes it easier to filter events.</p>
+</aside>
+
+<pre class="curl"><code>{
+  "type": "request",
+  "time": "2011-09-12T21:33:12Z",
+  "data": {
+    "host": "web14",
+    "path": "/search",
+    "query": {"q": "flowers"},
+    "duration_ms": 241,
+    "status": 200,
+    "user_agent": "Chrome/13.0.782.112"
+  }
+}</code></pre>
+
+<p>Processes that send events to Cube are called <strong>emitters</strong>. You can write them in any language, though the provided examples favor JavaScript. Emitters connect over WebSockets or HTTP POST to  <strong>collectors</strong>, who then save the events to MongoDB and invalidate associated cached metrics. Events can also include an <code>id</code> attribute, allowing you to replace an earlier event with new data.</p>
+
+<h2>Query Formulation <a href="#query" name="query">#</a></h2>
+
+<p>To pose questions about your data, you formulate <strong>queries</strong>. Cube has a small query language backed by <a href="http://pegjs.majda.cz/">PEG.js</a>; internally, these queries are translated to <a href="http://www.mongodb.org/display/DOCS/Advanced+Queries">MongoDB queries</a>. Each query first identifies a set of events, such as those with the type <code>"request"</code>. You can filter events with conditional operators:</p>
+
+<ul>
+<li><code>eq</code> - exact match.</li>
+<li><code>lt</code> - less than.</li>
+<li><code>le</code> - less than or equal to.</li>
+<li><code>gt</code> - greater than.</li>
+<li><code>ge</code> - greater than or equal to.</li>
+<li><code>ne</code> - not equal to.</li>
+<li><code>re</code> - regular expression match.</li>
+</ul>
+
+<p>Multiple filters are intersected by chaining them together. For example, to consider only requests whose duration was more than 250ms but less than 500ms, say <code>request.gt(duration_ms, 250).lt(duration_ms, 500)</code>. Filters also work on arrays: if any of the elements in the array match, then the event is accepted. For example, you can use <code>eq</code> to filter events by label.</p>
+
+<p>After identifying a set of events, you derive a value for each event. This value defaults to 1, which is handy for counting. You can specify a particular data field, such as <code>request(duration_ms)</code>, or an arithmetic expression such as <code>payment(cents / 100)</code>. These values are fed into a <em>reduce</em> function:</p>
+
+<ul>
+<li><code>sum</code> - adds a sequence of numbers, returning the total.</li>
+<li><code>min</code> - returns the minimum value.</li>
+<li><code>max</code> - returns the maximum value.</li>
+<li><code>median</code> - returns the median value (per <a href="http://en.wikipedia.org/wiki/Quantile#Quantiles_of_a_population">R-7</a>).</li>
+<li><code>distinct</code> - returns the count of distinct values.</li>
+</ul>
+
+<p>More reduces are planned, such as generalized quantiles and other descriptive statistics. You can also use arithmetic expressions for advanced metrics. For example, perhaps you want to know the percentage of page requests that triggered a server error? Query <code>sum(request.ge(status, 500)) / sum(request)</code>.</p>
+
+<h2>Query Evaluation <a href="#metric" name="metric">#</a></h2>
+
+<p>Queries are sent to <strong>evaluators</strong>, which reply with computed metrics. If you use Cube’s dashboard constructor, you don’t have to talk to evaluators explicitly; that’s handled by the visualization components. But to give an example:</p>
+
+<pre class="curl"><code>{
+  "expression": "sum(request)",
+  "start": "2011-09-10T12:37:12Z",
+  "stop": "2011-09-13T04:00:02Z",
+  "step": 30000
+}</code></pre>
+
+<p>The <em>step</em> field specifies how frequently you want to compute the specified metric expression. A value of 30,000 milliseconds corresponds to five minute intervals; thus, the earliest computed metric above is at 12:40 UTC. The supported time intervals are:</p>
+
+<aside>
+  <p>We’ll probably add smaller time intervals in the future (say, 10 seconds), for higher resolution timing.</p>
+</aside>
+
+<ul>
+<li><code>30000</code> - five minutes.
+<li><code>3600000</code> - one hour.
+<li><code>86400000</code> - one day.
+<li><code>604800000</code> - one week.
+<li><code>2592000000</code> - one month.
+</ul>
+
+<p>Specific time intervals allow Cube to employ <em>pyramidal aggregation</em> for simple reductions, improving performance. For example, if you ask for the number of events in a particular day, Cube can use previously-computed hourly sums to compute the daily total without scanning all the day’s events. Likewise, if five-minute sums are available for missing hours, those hours can be recomputed quckly, bubbling up to the daily total.</p>
+
+<p>Netrics are cached greedily to capped collections as they are computed. You can configure the cache size per event type. (When the capped collection runs out of space, Cube overwrites old cached values.) Cube can return some results immediately if the query is partially cached; remaining results will stream in asynchronously, in arbitrary order, to visualization components:</p>
+
+<pre class="curl"><code>{"time": "2011-09-10T12:40:00Z", "value": 42}
+{"time": "2011-09-10T12:50:00Z", "value": 47}
+{"time": "2011-09-10T12:45:00Z", "value": 48}</code></pre>
+
+<p>For specialized applications, you can write your own visualization components. You can also query Cube for raw events using the same query language (at a different endpoint, <code>/event/get</code> rather than <code>/metric/get</code>). For example, here’s a map of recent payments taken with Square, rendered in-browser by streaming raw events:</p>
+
+<img src="payment-map.png" width="960" height="606">
+
+<h2>Building Visualizations <a href="#visualize" name="visualize">#</a></h2>
+
+<p>After installing Cube and writing an emitter or two, use Cube’s graphical constructor to put together a realtime dashboard with a bit of typing and a few clicks. See the <a href="#video">60-second video</a> above as an example. Drag-and-drop charts onto the board, and then configure the backing query and display parameters. Cube dashboards are also powered by WebSockets: anyone viewing or editing the dashboard will see your edits in realtime.</p>
+
+<h2>Half-Baked, but Still Tasty</h2>
+
+<aside>
+  <p>We’re considering Socket.IO for better browser compatibility. For now, you may want to use Chrome.</p>
+</aside>
+
+<p>This is a work in progress! We’re working on more advanced queries, visualization components, coordinated views, documentation and countless other goodies. This is an experimental <a href="http://semver.org/">version 0</a> release: we expect to make non-backwards-compatible changes in the near future as we refine and add new features! Cube is used internally at Square, but not quite battle-hardened. Do, however, <a href="http://github.com/square/cube">get in touch</a> if you want to be involved in development!</p>
+
+<footer>
+  <span style="float:right;">
+    Released under the <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache License 2.0</a>.
+  </span>
+  Copyright 2011 <a href="http://squareup.com">Square, Inc.</a>
+</footer>
+
+<a href="http://github.com/square/cube"><img style="position:fixed;top:0;right:0;border:0;" src="https://a248.e.akamai.net/assets.github.com/img/e6bef7a091f5f3138b8cd40bc3e114258dd68ddf/687474703a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub"></a>
+
+    <script type="text/javascript" src="hijs/hi.js"></script>
+    <script type="text/javascript" src="d3/d3.js"></script>
+    <script type="text/javascript">
+
+var header = d3.select("header");
+
+d3.select(window).on("scroll", function(e) {
+  header.classed("fixed", (document.documentElement.scrollTop || document.body.scrollTop) > 170);
+});
+
+    </script>
+  </body>
+</html>

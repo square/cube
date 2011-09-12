@@ -1,0 +1,159 @@
+body {
+  position: relative;
+  font-family: "Helvetica Neue";
+  width: 960px;
+  margin: auto;
+  text-rendering: optimizeLegibility;
+}
+
+header {
+  position: absolute;
+  top: 130px;
+  margin-left: -20px;
+  padding: 10px 20px 30px 20px;
+  width: 960px;
+  z-index: 2;
+  background-image: -moz-linear-gradient(bottom, rgba(255, 255, 255, 0), white 30%, white);
+  background-image: -webkit-gradient(linear, left bottom, left top, from(rgba(255, 255, 255, 0)), to(white), color-stop(.3, white));
+}
+
+header.fixed {
+  position: fixed;
+  top: 0px;
+}
+
+header a {
+  padding: 0 10px 0 0;
+}
+
+h1 {
+  font-size: 72pt;
+}
+
+h1, h2 {
+  font-family: "Yanone Kaffeesatz";
+  position: relative;
+}
+
+h2 a {
+  position: absolute;
+  left: -1em;
+  width: 100%;
+  visibility: hidden;
+}
+
+h2:hover a {
+  visibility: visible;
+}
+
+h1 {
+  margin-top: 40px;
+  height: 120px;
+  background-image: url(screenshot.png);
+}
+
+pre {
+  background: #fff;
+  padding: 1em;
+  margin: 2em 0 2em 0;
+}
+
+p {
+  padding-right: 240px;
+}
+
+aside {
+  position: absolute;
+  left: 740px;
+  font-size: smaller;
+  width: 220px;
+  z-index: 1;
+}
+
+aside p {
+  margin: 0 0 1em 0;
+  padding: 0;
+}
+
+aside.pre {
+  margin-top: 3em;
+}
+
+aside.pre p {
+  margin-right: 1em;
+}
+
+code {
+  font-family: "Menlo", monospace;
+}
+
+a {
+  color: steelblue;
+}
+
+a:not(:hover) {
+  text-decoration: none;
+}
+
+.string, .regexp {
+  color: #f39;
+}
+
+.keyword {
+  color: #00c;
+}
+
+.comment {
+  color: #555;
+}
+
+.number {
+  color: #369;
+}
+
+.class, .special {
+  color: #1181B8;
+}
+
+.image {
+  background-position: right;
+  background-repeat: no-repeat;
+  height: 110px;
+}
+
+footer {
+  padding: 2em 0 1em 0;
+  font-size: 10pt;
+}
+
+.curl {
+  position: relative;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.curl:before,
+.curl:after {
+  content: '';
+  z-index: -1;
+  position: absolute;
+  bottom: 0;
+  width: 50%;
+  height: 50%;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.curl:before {
+  left: 0;
+  -moz-transform: skew(-10deg) rotate(-2deg);
+  -moz-transform-origin: 0% 100%;
+  -webkit-transform: skew(-10deg) rotate(-2deg);
+  -webkit-transform-origin: 0% 100%;
+}
+
+.curl:after {
+  right: 0;
+  -moz-transform: skew(10deg) rotate(2deg);
+  -moz-transform-origin: 100% 100%;
+  -webkit-transform: skew(10deg) rotate(2deg);
+  -webkit-transform-origin: 100% 100%;
+}
