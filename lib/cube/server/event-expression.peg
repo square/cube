@@ -1,0 +1,196 @@
+// TODO allow null literals (requires fixing pegjs)
+
+{
+  var filterEqual = function(o, k, v) { o[k] = v; },
+      filterGreater = filter("$gt"),
+      filterGreaterOrEqual = filter("$gte"),
+      filterLess = filter("$lt"),
+      filterLessOrEqual = filter("$lte"),
+      filterNotEqual = filter("$ne"),
+      filterRegularExpression = filter("$regex"),
+      exists = {$exists: true};
+
+  function noop() {}
+
+  function filter(op) {
+    return function(o, k, v) {
+      var f = o[k];
+      switch (typeof f) {
+        case "undefined": o[k] = f = {}; // continue
+        case "object": f[op] = v; break;
+        // otherwise, observe the existing equals (literal) filter
+      }
+    };
+  }
+
+  function arrayAccessor(name) {
+    name = new String(name);
+    name.array = true;
+    return name;
+  }
+
+  function objectAccessor(name) {
+    return name;
+  }
+
+  function compoundFields(type, head, tail) {
+    var n = tail.length;
+    return {
+      type: type,
+      exists: function(o) {
+        var i = -1;
+        head.exists(o);
+        while (++i < n) tail[i][3].exists(o);
+      },
+      fields: function(o) {
+        var i = -1;
+        head.fields(o);
+        while (++i < n) tail[i][3].fields(o);
+      }
+    };
+  }
+
+  function member(head, tail) {
+    var fields = ["d", head].concat(tail),
+        shortName = fields.filter(function(d) { return !d.array; }).join("."),
+        longName = fields.join("."),
+        i = -1,
+        n = fields.length;
+    return {
+      field: longName,
+      exists: function(o) {
+        if (!(shortName in o)) {
+          o[shortName] = exists;
+        }
+      },
+      fields: function(o) {
+        o[shortName] = 1;
+      }
+    };
+  }
+
+}
+
+start
+  = _ expression:event_expression _ { return expression; }
+
+event_expression
+  = value:event_value_expression filters:(_ "." _ event_filter_expression)*
+{
+  value.filter = function(filter) {
+    var i = -1, n = filters.length;
+    while (++i < n) filters[i][3](filter);
+    value.exists(filter);
+  };
+  return value;
+}
+
+event_filter_expression
+  = op:filter_operator _ "(" _ member:event_member_expression _ "," _ value:literal _ ")" { return function(o) { op(o, member.field, value); }; }
+
+event_value_expression
+  = type:identifier _ "(" _ head:event_member_expression tail:(_ "," _ event_member_expression)* _ ")" { return compoundFields(type, head, tail); }
+  / type:identifier { return {type: type, exists: noop, fields: noop}; }
+
+event_member_expression
+  = head:identifier tail:(
+        _ "[" _ name:number _ "]" { return arrayAccessor(name); }
+      / _ "." _ name:identifier { return objectAccessor(name); }
+    )* { return member(head, tail); }
+
+filter_operator
+  = "eq" { return filterEqual; }
+  / "gt" { return filterGreater; }
+  / "ge" { return filterGreaterOrEqual; }
+  / "lt" { return filterLess; }
+  / "le" { return filterLessOrEqual; }
+  / "ne" { return filterNotEqual; }
+  / "re" { return filterRegularExpression; }
+
+identifier
+  = first:[a-zA-Z_$] rest:[a-zA-Z0-9_$]* { return first + rest.join(""); }
+
+literal
+  = string
+  / number
+  / "true" { return true; }
+  / "false" { return false; }
+
+string "string"
+  = '"' chars:double_string_char* '"' { return chars.join(""); }
+  / "'" chars:single_string_char* "'" { return chars.join(""); }
+
+double_string_char
+  = !('"' / "\\") char_:. { return char_; }
+  / "\\" sequence:escape_sequence { return sequence; }
+
+single_string_char
+  = !("'" / "\\") char_:. { return char_; }
+  / "\\" sequence:escape_sequence { return sequence; }
+
+escape_sequence
+  = character_escape_sequence
+  / "0" !digit { return "\0"; }
+  / hex_escape_sequence
+  / unicode_escape_sequence
+
+character_escape_sequence
+  = single_escape_character
+  / non_escape_character
+
+single_escape_character
+  = char_:['"\\bfnrtv] { return char_.replace("b", "\b").replace("f", "\f").replace("n", "\n").replace("r", "\r").replace("t", "\t").replace("v", "\x0B"); }
+
+non_escape_character
+  = !escape_character char_:. { return char_; }
+
+escape_character
+  = single_escape_character
+  / digit
+  / "x"
+  / "u"
+
+hex_escape_sequence
+  = "x" h1:hex_digit h2:hex_digit { return String.fromCharCode(+("0x" + h1 + h2)); }
+
+unicode_escape_sequence
+  = "u" h1:hex_digit h2:hex_digit h3:hex_digit h4:hex_digit { return String.fromCharCode(+("0x" + h1 + h2 + h3 + h4)); }
+
+number "number"
+  = "-" _ number:number { return -number; }
+  / int_:int frac:frac exp:exp { return +(int_ + frac + exp); }
+  / int_:int frac:frac { return +(int_ + frac); }
+  / int_:int exp:exp { return +(int_ + exp); }
+  / frac:frac { return +frac; }
+  / int_:int { return +int_; }
+
+int
+  = digit19:digit19 digits:digits { return digit19 + digits; }
+  / digit:digit
+
+frac
+  = "." digits:digits { return "." + digits; }
+
+exp
+  = e:e digits:digits { return e + digits; }
+
+digits
+  = digits:digit+ { return digits.join(""); }
+
+e
+  = e:[eE] sign:[+-]? { return e + sign; }
+
+digit
+  = [0-9]
+
+digit19
+  = [1-9]
+
+hex_digit
+  = [0-9a-fA-F]
+
+_ "whitespace"
+  = whitespace*
+
+whitespace
+  = [ \t\n\r]

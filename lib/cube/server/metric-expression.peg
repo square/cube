@@ -1,0 +1,271 @@
+// TODO allow null literals (requires fixing pegjs)
+// TODO allow multiple group dimensions (requires compound group key)
+
+{
+  var filterEqual = function(o, k, v) { o[k] = v; },
+      filterGreater = filter("$gt"),
+      filterGreaterOrEqual = filter("$gte"),
+      filterLess = filter("$lt"),
+      filterLessOrEqual = filter("$lte"),
+      filterNotEqual = filter("$ne"),
+      filterRegularExpression = filter("$regex"),
+      exists = {$exists: true};
+
+  function add(a, b) { return a + b; }
+  function subtract(a, b) { return a - b; }
+  function multiply(a, b) { return a * b; }
+  function divide(a, b) { return a / b; }
+
+  function one() { return 1; }
+  function noop() {}
+
+  function filter(op) {
+    return function(o, k, v) {
+      var f = o[k];
+      switch (typeof f) {
+        case "undefined": o[k] = f = {}; // continue
+        case "object": f[op] = v; break;
+        // otherwise, observe the existing equals (literal) filter
+      }
+    };
+  }
+
+  function arrayAccessor(name) {
+    name = new String(name);
+    name.array = true;
+    return name;
+  }
+
+  function objectAccessor(name) {
+    return name;
+  }
+
+  function compoundMetric(head, tail) {
+    var i = -1,
+        n = tail.length,
+        t,
+        e = head;
+    while (++i < n) {
+      t = tail[i];
+      e = {left: e, op: t[1], right: t[3]};
+      if (!i) head = e;
+    }
+    return head;
+  }
+
+  function compoundValue(head, tail) {
+    var n = tail.length;
+    return {
+      exists: function(o) {
+        var i = -1;
+        head.exists(o);
+        while (++i < n) tail[i][3].exists(o);
+      },
+      fields: function(o) {
+        var i = -1;
+        head.fields(o);
+        while (++i < n) tail[i][3].fields(o);
+      },
+      value: function(o) {
+        var v = head.value(o),
+            i = -1,
+            t;
+        while (++i < n) v = (t = tail[i])[1](v, t[3].value(o));
+        return v;
+      }
+    };
+  }
+
+  function member(head, tail) {
+    var fields = ["d", head].concat(tail),
+        shortName = fields.filter(function(d) { return !d.array; }).join("."),
+        longName = fields.join("."),
+        i = -1,
+        n = fields.length;
+    return {
+      field: longName,
+      exists: function(o) {
+        if (!(shortName in o)) {
+          o[shortName] = exists;
+        }
+      },
+      fields: function(o) {
+        o[shortName] = 1;
+      },
+      value: function(o) {
+        var i = -1;
+        while (++i < n) {
+          o = o[fields[i]];
+        }
+        return o;
+      }
+    };
+  }
+}
+
+start
+  = _ expression:metric_additive_expression _ { return expression; }
+
+metric_additive_expression
+  = head:metric_multiplicative_expression tail:(_ additive_operator _ metric_additive_expression)* { return compoundMetric(head, tail); }
+
+metric_multiplicative_expression
+  = head:metric_unary_expression tail:(_ multiplicative_operator _ metric_multiplicative_expression)* { return compoundMetric(head, tail); }
+
+metric_unary_expression
+  = "-" _ expression:metric_unary_expression { var value = expression.value; expression.value = function(o) { return -value(o); }; return expression; }
+  / metric_primary_expression
+
+metric_primary_expression
+  = reduce:identifier _ "(" _ event:event_expression _ ")" { event.reduce = reduce; event.source = input.substring(savedPos1, pos); return event; }
+  / value:number { return {value: function() { return value; }}; }
+  / "(" _ expression:metric_additive_expression _ ")" { return expression; }
+
+event_expression
+  = value:event_value_expression filters:(_ "." _ event_filter_expression)* group:(_ "." _ event_group_expression)?
+{
+  value.filter = function(filter) {
+    var i = -1, n = filters.length;
+    while (++i < n) filters[i][3](filter);
+    value.exists(filter);
+  };
+  if (group) value.group = group[3];
+  return value;
+}
+
+event_group_expression
+  = "group" _ "(" _ member:event_member_expression _ ")" { return member; }
+  / "groups" _ "(" _ member:event_member_expression _ ")" { member.multi = true; return member; }
+
+event_filter_expression
+  = op:filter_operator _ "(" _ member:event_member_expression _ "," _ value:literal _ ")" { return function(o) { op(o, member.field, value); }; }
+
+event_value_expression
+  = type:identifier _ "(" _ value:event_additive_expression _ ")" { value.type = type; return value; }
+  / type:identifier { return {type: type, value: one, exists: noop, fields: noop}; }
+
+event_additive_expression
+  = head:event_multiplicative_expression tail:(_ additive_operator _ event_additive_expression)* { return compoundValue(head, tail); }
+
+event_multiplicative_expression
+  = head:event_unary_expression tail:(_ multiplicative_operator _ event_multiplicative_expression)* { return compoundValue(head, tail); }
+
+event_unary_expression
+  = event_primary_expression
+  / "-" _ unary:event_unary_expression { return {value: function(o) { return -unary.value(o); }, exists: unary.exists, fields: unary.fields}; }
+
+event_primary_expression
+  = event_member_expression
+  / number:number { return {value: function() { return number; }, exists: noop, fields: noop}; }
+  / "(" _ expression:event_additive_expression _ ")" { return expression; }
+
+event_member_expression
+  = head:identifier tail:(
+        _ "[" _ name:number _ "]" { return arrayAccessor(name); }
+      / _ "." _ name:identifier { return objectAccessor(name); }
+    )* { return member(head, tail); }
+
+additive_operator
+  = "+" { return add; }
+  / "-" { return subtract; }
+
+multiplicative_operator
+  = "*" { return multiply; }
+  / "/" { return divide; }
+
+filter_operator
+  = "eq" { return filterEqual; }
+  / "gt" { return filterGreater; }
+  / "ge" { return filterGreaterOrEqual; }
+  / "lt" { return filterLess; }
+  / "le" { return filterLessOrEqual; }
+  / "ne" { return filterNotEqual; }
+  / "re" { return filterRegularExpression; }
+
+identifier
+  = first:[a-zA-Z_$] rest:[a-zA-Z0-9_$]* { return first + rest.join(""); }
+
+literal
+  = string
+  / number
+  / "true" { return true; }
+  / "false" { return false; }
+
+string "string"
+  = '"' chars:double_string_char* '"' { return chars.join(""); }
+  / "'" chars:single_string_char* "'" { return chars.join(""); }
+
+double_string_char
+  = !('"' / "\\") char_:. { return char_; }
+  / "\\" sequence:escape_sequence { return sequence; }
+
+single_string_char
+  = !("'" / "\\") char_:. { return char_; }
+  / "\\" sequence:escape_sequence { return sequence; }
+
+escape_sequence
+  = character_escape_sequence
+  / "0" !digit { return "\0"; }
+  / hex_escape_sequence
+  / unicode_escape_sequence
+
+character_escape_sequence
+  = single_escape_character
+  / non_escape_character
+
+single_escape_character
+  = char_:['"\\bfnrtv] { return char_.replace("b", "\b").replace("f", "\f").replace("n", "\n").replace("r", "\r").replace("t", "\t").replace("v", "\x0B"); }
+
+non_escape_character
+  = !escape_character char_:. { return char_; }
+
+escape_character
+  = single_escape_character
+  / digit
+  / "x"
+  / "u"
+
+hex_escape_sequence
+  = "x" h1:hex_digit h2:hex_digit { return String.fromCharCode(+("0x" + h1 + h2)); }
+
+unicode_escape_sequence
+  = "u" h1:hex_digit h2:hex_digit h3:hex_digit h4:hex_digit { return String.fromCharCode(+("0x" + h1 + h2 + h3 + h4)); }
+
+number "number"
+  = "-" _ number:number { return -number; }
+  / int_:int frac:frac exp:exp { return +(int_ + frac + exp); }
+  / int_:int frac:frac { return +(int_ + frac); }
+  / int_:int exp:exp { return +(int_ + exp); }
+  / frac:frac { return +frac; }
+  / int_:int { return +int_; }
+
+int
+  = digit19:digit19 digits:digits { return digit19 + digits; }
+  / digit:digit
+
+frac
+  = "." digits:digits { return "." + digits; }
+
+exp
+  = e:e digits:digits { return e + digits; }
+
+digits
+  = digits:digit+ { return digits.join(""); }
+
+e
+  = e:[eE] sign:[+-]? { return e + sign; }
+
+digit
+  = [0-9]
+
+digit19
+  = [1-9]
+
+hex_digit
+  = [0-9a-fA-F]
+
+_ "whitespace"
+  = whitespace*
+
+whitespace
+  = [ \t\n\r]

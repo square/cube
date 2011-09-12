@@ -1,0 +1,12 @@
+.palette rect {
+  fill: #eee;
+  stroke: #999;
+}
+
+.palette rect:hover {
+  fill: #ddd;
+}
+
+.palette text {
+  pointer-events: none;
+}
