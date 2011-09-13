@@ -1,6 +1,6 @@
 db.createCollection("boards");
 
-["random", "collectd_df", "collectd_load", "collectd_interface", "collectd_memory"].forEach(function(type) {
+["random", "stock", "collectd_df", "collectd_load", "collectd_interface", "collectd_memory"].forEach(function(type) {
   var event = type + "_events", metric = type + "_metrics";
   db.createCollection(event);
   db[event].ensureIndex({t: 1});
