@@ -1,6 +1,11 @@
 {
   "name": "cube",
   "version": "0.0.1",
+  "description": "A system for time series visualization using MongoDB, Node and D3.",
+  "keywords": ["time series", "visualization"],
+  "homepage": "http://square.github.com/cube/",
+  "author": {"name": "Mike Bostock", "url": "http://bost.ocks.org/mike"},
+  "repository": {"type": "git", "url": "http://github.com/square/cube.git"},
   "main": "./lib/cube",
   "dependencies": {
     "d3": "2.1.3",
