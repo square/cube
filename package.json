@@ -1,6 +1,7 @@
 {
   "name": "cube",
   "version": "0.0.1",
+  "main": "./lib/cube",
   "dependencies": {
     "d3": "2.1.3",
     "mongodb": "0.9.6-15",

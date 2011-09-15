@@ -1,5 +1,5 @@
 var util = require("util"),
-    emitter = require("../../../lib/cube/server/emitter"),
+    cube = require("../../../"),
     options = require("./random-config"),
     count = 0,
     batch = 10,
@@ -9,7 +9,7 @@ var util = require("util"),
 
 // Connect to websocket.
 util.log("starting websocket client");
-var client = emitter().open(options["http-host"], options["http-port"]);
+var client = cube.emitter().open(options["http-host"], options["http-port"]);
 
 // Emit random values.
 var interval = setInterval(function() {
