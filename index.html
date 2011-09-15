@@ -18,7 +18,7 @@
   <a href="#">Overview</a>
   <a href="http://github.com/square/cube/wiki">Documentation</a>
   <a href="http://github.com/square/cube">Source</a>
-  <div style="float:right;"><a href="http://twitter.com/share" class="twitter-share-button" data-count="horizontal">Tweet</a><script defer type="text/javascript" src="http://platform.twitter.com/widgets.js"></script></div>
+  <div style="float:right;"><a href="http://twitter.com/share" class="twitter-share-button" data-count="none">Tweet</a><script defer type="text/javascript" src="http://platform.twitter.com/widgets.js"></script></div>
 </header>
 
 <h2>Time Series Visualization</h2>
@@ -88,6 +88,10 @@
 
 <p>After identifying a set of events, you derive a value for each event. This value defaults to 1, which is handy for counting. You can specify a particular data field, such as <code>request(duration_ms)</code>, or an arithmetic expression such as <code>payment(cents / 100)</code>. These values are fed into a <em>reduce</em> function:</p>
 
+<aside>
+  <p>More reduces are planned, such as generalized quantiles and other descriptive statistics.</p>
+</aside>
+
 <ul>
 <li><code>sum</code> - adds a sequence of numbers, returning the total.</li>
 <li><code>min</code> - returns the minimum value.</li>
@@ -96,7 +100,7 @@
 <li><code>distinct</code> - returns the count of distinct values.</li>
 </ul>
 
-<p>More reduces are planned, such as generalized quantiles and other descriptive statistics. You can also use arithmetic expressions for advanced metrics. For example, perhaps you want to know the percentage of page requests that triggered a server error? Query <code>sum(request.ge(status, 500)) / sum(request)</code>.</p>
+<p>You can also use arithmetic expressions for advanced metrics. For example, perhaps you want to know the percentage of page requests that triggered a server error? Query <code>sum(request.ge(status, 500)) / sum(request)</code>.</p>
 
 <h2>Query Evaluation <a href="#metric" name="metric">#</a></h2>
 
@@ -123,9 +127,9 @@
 <li><code>2592000000</code> - one month.
 </ul>
 
-<p>Specific time intervals allow Cube to employ <em>pyramidal aggregation</em> for simple reductions, improving performance. For example, if you ask for the number of events in a particular day, Cube can use previously-computed hourly sums to compute the daily total without scanning all the day’s events. Likewise, if five-minute sums are available for missing hours, those hours can be recomputed quckly, bubbling up to the daily total.</p>
+<p>Specific time intervals allow Cube to employ <em>pyramidal aggregation</em> for simple reductions, improving performance. For example, if you ask for the number of events in a particular day, Cube can use previously-computed hourly sums to compute the daily total without scanning all the day’s events. Likewise, if five-minute sums are available for missing hours, those hours can be recomputed quickly, bubbling up to the daily total.</p>
 
-<p>Netrics are cached greedily to capped collections as they are computed. You can configure the cache size per event type. (When the capped collection runs out of space, Cube overwrites old cached values.) Cube can return some results immediately if the query is partially cached; remaining results will stream in asynchronously, in arbitrary order, to visualization components:</p>
+<p>Metrics are cached greedily to capped collections as they are computed. You can configure the cache size per event type. (When the capped collection runs out of space, Cube overwrites old cached values.) Cube can return some results immediately if the query is partially cached; remaining results will stream in asynchronously, in arbitrary order, to visualization components:</p>
 
 <pre class="curl"><code>{"time": "2011-09-10T12:40:00Z", "value": 42}
 {"time": "2011-09-10T12:50:00Z", "value": 47}
