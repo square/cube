@@ -14,6 +14,7 @@ header {
   width: 960px;
   z-index: 2;
   background-image: -moz-linear-gradient(bottom, rgba(255, 255, 255, 0), white 30%, white);
+  background-image: -o-linear-gradient(bottom, rgba(255, 255, 255, 0), white 30%, white);
   background-image: -webkit-gradient(linear, left bottom, left top, from(rgba(255, 255, 255, 0)), to(white), color-stop(.3, white));
 }
 
@@ -146,6 +147,8 @@ footer {
   left: 0;
   -moz-transform: skew(-10deg) rotate(-2deg);
   -moz-transform-origin: 0% 100%;
+  -o-transform: skew(-10deg) rotate(-2deg);
+  -o-transform-origin: 0% 100%;
   -webkit-transform: skew(-10deg) rotate(-2deg);
   -webkit-transform-origin: 0% 100%;
 }
@@ -154,6 +157,8 @@ footer {
   right: 0;
   -moz-transform: skew(10deg) rotate(2deg);
   -moz-transform-origin: 100% 100%;
+  -o-transform: skew(10deg) rotate(2deg);
+  -o-transform-origin: 100% 100%;
   -webkit-transform: skew(10deg) rotate(2deg);
   -webkit-transform-origin: 100% 100%;
 }
