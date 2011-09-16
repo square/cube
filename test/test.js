@@ -1,5 +1,9 @@
 var mongodb = require("mongodb"),
-    assert = require("assert");
+    assert = require("assert"),
+    util = require("util"),
+    http = require("http");
+
+exports.port = 1083;
 
 exports.batch = function(batch) {
   return {
@@ -47,3 +51,26 @@ exports.batch = function(batch) {
     }
   };
 };
+
+exports.request = function(options, data) {
+  return function() {
+    var cb = this.callback;
+
+    options.host = "localhost";
+
+    var request = http.request(options, function(response) {
+      response.body = "";
+      response.setEncoding("utf8");
+      response.on("data", function(chunk) { response.body += chunk; });
+      response.on("end", function() { cb(null, response); });
+    });
+
+    request.on("error", function(e) { cb(e, null); });
+
+    if (arguments.length > 1) request.write(data);
+    request.end();
+  };
+};
+
+// Disable logging for tests.
+util.log = function() {};
