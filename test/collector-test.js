@@ -1,0 +1,29 @@
+var vows = require("vows"),
+    assert = require("assert"),
+    cube = require("../"),
+    test = require("./test");
+
+var suite = vows.describe("collector");
+
+var port = ++test.port, server = cube.server({
+  "mongo-host": "localhost",
+  "mongo-port": 27017,
+  "mongo-database": "cube_test",
+  "http-port": port
+});
+
+server.register = cube.collector.register;
+
+server.start();
+
+suite.addBatch(test.batch({
+  "POST /event/put with invalid JSON": {
+    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, "This ain't JSON.\n"),
+    "responds with status 400": function(response) {
+      assert.equal(response.statusCode, 400);
+      assert.deepEqual(JSON.parse(response.body), {status: 400});
+    }
+  }
+}));
+
+suite.export(module);
