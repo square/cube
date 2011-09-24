@@ -12,6 +12,13 @@ var port = ++test.port, server = cube.server({
   "http-port": port
 });
 
+var obj = { type: "test"
+          , time: (new Date).toISOString()
+          , data: { foo: "bar" }
+          };
+var arr = [obj];
+var num = 42;
+
 server.register = cube.collector.register;
 
 server.start();
@@ -19,6 +26,36 @@ server.start();
 suite.addBatch(test.batch({
   "POST /event/put with invalid JSON": {
     topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, "This ain't JSON.\n"),
+    "responds with status 400": function(response) {
+      assert.equal(response.statusCode, 400);
+      assert.deepEqual(JSON.parse(response.body), {status: 400});
+    }
+  }
+}));
+
+suite.addBatch(test.batch({
+  "POST /event/put with a JSON object": {
+    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify(obj)),
+    "responds with status 200": function(response) {
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(JSON.parse(response.body), {status: 200});
+    }
+  }
+}));
+
+suite.addBatch(test.batch({
+  "POST /event/put with a JSON array": {
+    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify(arr)),
+    "responds with status 200": function(response) {
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(JSON.parse(response.body), {status: 200});
+    }
+  }
+}));
+
+suite.addBatch(test.batch({
+  "POST /event/put with a JSON number": {
+    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify(num)),
     "responds with status 400": function(response) {
       assert.equal(response.statusCode, 400);
       assert.deepEqual(JSON.parse(response.body), {status: 400});
