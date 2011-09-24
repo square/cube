@@ -67,7 +67,7 @@ exports.request = function(options, data) {
 
     request.on("error", function(e) { cb(e, null); });
 
-    if (arguments.length > 1) request.write(data);
+    if (data && data.length > 0) request.write(data);
     request.end();
   };
 };
