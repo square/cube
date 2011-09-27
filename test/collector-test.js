@@ -36,9 +36,9 @@ suite.addBatch(test.batch({
 suite.addBatch(test.batch({
   "POST /event/put with a JSON object": {
     topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify(obj)),
-    "responds with status 200": function(response) {
-      assert.equal(response.statusCode, 200);
-      assert.deepEqual(JSON.parse(response.body), {status: 200});
+    "responds with status 400": function(response) {
+      assert.equal(response.statusCode, 400);
+      assert.deepEqual(JSON.parse(response.body), {status: 400});
     }
   }
 }));
