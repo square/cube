@@ -6,8 +6,9 @@ var vows = require("vows"),
 
 var suite = vows.describe("endpoint");
 
-var port = ++test.port,
-    server = http.createServer(endpoint.file("../client/semicolon.js", "../client/semicolon.js"));
+var file = "lib/cube/client/semicolon.js",
+    port = ++test.port,
+    server = http.createServer(endpoint.file(file, file));
 
 server.listen(port, "127.0.0.1");
 
