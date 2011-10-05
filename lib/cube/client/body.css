@@ -82,6 +82,6 @@ button {
 
 @media screen and (min-width: 1920px) {
   .view {
-    -webkit-transform: scale(1.48,1.48)translate(0px,110px);
+    -webkit-transform: scale(1.4,1.4)translate(0px,110px);
   }
 }
