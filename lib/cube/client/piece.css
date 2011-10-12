@@ -29,6 +29,32 @@
   margin: 4px;
 }
 
+.piece textarea {
+  margin-left: 4px;
+  height: 20px;
+  border-radius: 4px;
+  border: solid 1px #ccc;
+  resize: none;
+}
+
+.piece .time {
+  margin-top: 1px;
+  margin-left: 4px;
+  line-height: 20px;
+}
+
+.piece select {
+  margin-right: 4px;
+  float: right;
+  height: 20px;
+  border-radius: 4px;
+  border: solid 1px #ccc;
+}
+
+.view .piece.sum, .view .piece.text {
+  text-align: right;
+}
+
 .resize {
   position: absolute;
   padding: 6px;
@@ -95,8 +121,16 @@
   stroke: #666;
 }
 
+.axis {
+  shape-rendering: crispEdges;
+}
+
 .axis .domain {
-  display: none;
+  fill: none;
+}
+
+.x.axis .domain {
+  stroke: #000;
 }
 
 .x.axis line {
@@ -109,8 +143,4 @@
 
 .y.axis line {
   stroke: #eee;
-}
-
-.y.axis g:first-child {
-  display: none;
 }
