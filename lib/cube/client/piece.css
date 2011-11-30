@@ -29,7 +29,7 @@
   margin: 4px;
 }
 
-.piece textarea {
+.piece textarea, .piece input {
   margin-left: 4px;
   height: 20px;
   border-radius: 4px;
@@ -41,6 +41,11 @@
   margin-top: 1px;
   margin-left: 4px;
   line-height: 20px;
+}
+
+.piece input {
+  height: 16px;
+  width: 88px;
 }
 
 .piece select {
