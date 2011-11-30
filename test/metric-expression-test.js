@@ -283,6 +283,11 @@ suite.addBatch({
       var filter = {};
       parser.parse("sum(test.re(i, \"foo\"))").filter(filter);
       assert.deepEqual(filter, {"d.i": {$regex: "foo"}});
+    },
+    "the in filter results in a $in query filter": function(e) {
+      var filter = {};
+      parser.parse("sum(test.in(i, [\"foo\", 42]))").filter(filter);
+      assert.deepEqual(filter, {"d.i": {$in: ["foo", 42]}});
     }
   }
 
