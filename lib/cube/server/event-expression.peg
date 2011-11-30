@@ -8,6 +8,7 @@
       filterLessOrEqual = filter("$lte"),
       filterNotEqual = filter("$ne"),
       filterRegularExpression = filter("$regex"),
+      filterIn = filter("$in"),
       exists = {$exists: true};
 
   function noop() {}
@@ -106,15 +107,21 @@ filter_operator
   / "le" { return filterLessOrEqual; }
   / "ne" { return filterNotEqual; }
   / "re" { return filterRegularExpression; }
+  / "in" { return filterIn; }
 
 identifier
   = first:[a-zA-Z_$] rest:[a-zA-Z0-9_$]* { return first + rest.join(""); }
 
 literal
-  = string
+  = array_literal
+  / string
   / number
   / "true" { return true; }
   / "false" { return false; }
+
+array_literal
+  = "[" _ first:literal rest:(_ "," _ literal)* _ "]" { return [first].concat(rest.map(function(d) { return d[3]; })); }
+  / "[" _ "]" { return []; }
 
 string "string"
   = '"' chars:double_string_char* '"' { return chars.join(""); }
