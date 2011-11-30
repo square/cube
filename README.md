@@ -20,7 +20,7 @@ Cube is built with the following open-source systems and libraries:
 * [Node.js](http://nodejs.org/)
 * [PEG.js](http://pegjs.majda.cz/)
 * [Vows](http://vowsjs.org/)
-* [websocket-client](/pgriess/node-websocket-client)
+* [websocket](/Worlize/WebSocket-Node)
 * [websocket-server](/miksago/node-websocket-server)
 
 ## Contributing
