@@ -1,6 +1,6 @@
 {
   "name": "cube",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "A system for time series visualization using MongoDB, Node and D3.",
   "keywords": ["time series", "visualization"],
   "homepage": "http://square.github.com/cube/",
@@ -8,7 +8,7 @@
   "repository": {"type": "git", "url": "http://github.com/square/cube.git"},
   "main": "./lib/cube",
   "dependencies": {
-    "d3": "2.6.0",
+    "d3": "2.7.2",
     "mongodb": "0.9.7-1.3",
     "pegjs": "0.6.2",
     "vows": "0.5.11",
