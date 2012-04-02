@@ -1,6 +1,6 @@
 {
   "name": "cube",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A system for time series visualization using MongoDB, Node and D3.",
   "keywords": ["time series", "visualization"],
   "homepage": "http://square.github.com/cube/",
