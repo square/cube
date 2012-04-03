@@ -13,14 +13,14 @@ suite.addBatch({
         keys.push(+key);
       }
       keys.sort(function(a, b) { return a - b; });
-      assert.deepEqual(keys, [2e4, 3e5, 36e5, 864e5, 6048e5, 2592e6]);
+      assert.deepEqual(keys, [1e4, 3e5, 36e5, 864e5, 6048e5, 2592e6]);
     }
   },
 
-  "second20": {
-    topic: tiers[2e4],
-    "has the key 2e4": function(tier) {
-      assert.strictEqual(tier.key, 2e4);
+  "second10": {
+    topic: tiers[1e4],
+    "has the key 1e4": function(tier) {
+      assert.strictEqual(tier.key, 1e4);
     },
     "next is undefined": function(tier) {
       assert.isUndefined(tier.next);
@@ -30,11 +30,11 @@ suite.addBatch({
     },
 
     "floor": {
-      "rounds down to 20-seconds": function(tier) {
+      "rounds down to 10-seconds": function(tier) {
         assert.deepEqual(tier.floor(utc(2011, 08, 02, 12, 00, 20)), utc(2011, 08, 02, 12, 00, 20));
         assert.deepEqual(tier.floor(utc(2011, 08, 02, 12, 00, 21)), utc(2011, 08, 02, 12, 00, 20));
         assert.deepEqual(tier.floor(utc(2011, 08, 02, 12, 00, 23)), utc(2011, 08, 02, 12, 00, 20));
-        assert.deepEqual(tier.floor(utc(2011, 08, 02, 12, 00, 39)), utc(2011, 08, 02, 12, 00, 20));
+        assert.deepEqual(tier.floor(utc(2011, 08, 02, 12, 00, 39)), utc(2011, 08, 02, 12, 00, 30));
         assert.deepEqual(tier.floor(utc(2011, 08, 02, 12, 00, 40)), utc(2011, 08, 02, 12, 00, 40));
       },
       "does not modify the passed-in date": function(tier) {
@@ -45,35 +45,36 @@ suite.addBatch({
     },
 
     "ceil": {
-      "rounds up to 5-minutes": function(tier) {
+      "rounds up to 10-seconds": function(tier) {
         assert.deepEqual(tier.ceil(utc(2011, 08, 02, 12, 00, 20)), utc(2011, 08, 02, 12, 00, 20));
-        assert.deepEqual(tier.ceil(utc(2011, 08, 02, 12, 00, 21)), utc(2011, 08, 02, 12, 00, 40));
-        assert.deepEqual(tier.ceil(utc(2011, 08, 02, 12, 00, 23)), utc(2011, 08, 02, 12, 00, 40));
+        assert.deepEqual(tier.ceil(utc(2011, 08, 02, 12, 00, 21)), utc(2011, 08, 02, 12, 00, 30));
+        assert.deepEqual(tier.ceil(utc(2011, 08, 02, 12, 00, 23)), utc(2011, 08, 02, 12, 00, 30));
         assert.deepEqual(tier.ceil(utc(2011, 08, 02, 12, 00, 39)), utc(2011, 08, 02, 12, 00, 40));
         assert.deepEqual(tier.ceil(utc(2011, 08, 02, 12, 00, 40)), utc(2011, 08, 02, 12, 00, 40));
       },
       "does not modified the specified date": function(tier) {
         var date = utc(2011, 08, 02, 12, 00, 21);
-        assert.deepEqual(tier.ceil(date), utc(2011, 08, 02, 12, 00, 40));
+        assert.deepEqual(tier.ceil(date), utc(2011, 08, 02, 12, 00, 30));
         assert.deepEqual(date, utc(2011, 08, 02, 12, 00, 21));
       }
     },
 
     "step": {
-      "increments time by twenty minutes": function(tier) {
+      "increments time by ten seconds": function(tier) {
         var date = utc(2011, 08, 02, 23, 59, 20);
+        assert.deepEqual(date = tier.step(date), utc(2011, 08, 02, 23, 59, 30));
         assert.deepEqual(date = tier.step(date), utc(2011, 08, 02, 23, 59, 40));
+        assert.deepEqual(date = tier.step(date), utc(2011, 08, 02, 23, 59, 50));
         assert.deepEqual(date = tier.step(date), utc(2011, 08, 03, 00, 00, 00));
+        assert.deepEqual(date = tier.step(date), utc(2011, 08, 03, 00, 00, 10));
         assert.deepEqual(date = tier.step(date), utc(2011, 08, 03, 00, 00, 20));
-        assert.deepEqual(date = tier.step(date), utc(2011, 08, 03, 00, 00, 40));
-        assert.deepEqual(date = tier.step(date), utc(2011, 08, 03, 00, 01, 00));
       },
       "does not round the specified date": function(tier) {
-        assert.deepEqual(tier.step(utc(2011, 08, 02, 12, 21, 23)), utc(2011, 08, 02, 12, 21, 43));
+        assert.deepEqual(tier.step(utc(2011, 08, 02, 12, 21, 23)), utc(2011, 08, 02, 12, 21, 33));
       },
       "does not modify the specified date": function(tier) {
         var date = utc(2011, 08, 02, 12, 20, 00);
-        assert.deepEqual(tier.step(date), utc(2011, 08, 02, 12, 20, 20));
+        assert.deepEqual(tier.step(date), utc(2011, 08, 02, 12, 20, 10));
         assert.deepEqual(date, utc(2011, 08, 02, 12, 20, 00));
       }
     }
@@ -83,11 +84,11 @@ suite.addBatch({
     "has the key 3e5": function(tier) {
       assert.strictEqual(tier.key, 3e5);
     },
-    "next is the 20-second tier": function(tier) {
-      assert.equal(tier.next, tiers[2e4]);
+    "next is undefined": function(tier) {
+      assert.isUndefined(tier.next);
     },
-    "size is 15": function(tier) {
-      assert.strictEqual(tier.size(), 15);
+    "size is undefined": function(tier) {
+      assert.isUndefined(tier.size);
     },
 
     "floor": {
