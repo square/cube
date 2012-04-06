@@ -1,5 +1,4 @@
 // TODO allow null literals (requires fixing pegjs)
-// TODO allow multiple group dimensions (requires compound group key)
 
 {
   var filterEqual = function(o, k, v) { o[k] = v; },
@@ -123,20 +122,15 @@ metric_primary_expression
   / "(" _ expression:metric_additive_expression _ ")" { return expression; }
 
 event_expression
-  = value:event_value_expression filters:(_ "." _ event_filter_expression)* group:(_ "." _ event_group_expression)?
+  = value:event_value_expression filters:(_ "." _ event_filter_expression)*
 {
   value.filter = function(filter) {
     var i = -1, n = filters.length;
     while (++i < n) filters[i][3](filter);
     value.exists(filter);
   };
-  if (group) value.group = group[3];
   return value;
 }
-
-event_group_expression
-  = "group" _ "(" _ member:event_member_expression _ ")" { return member; }
-  / "groups" _ "(" _ member:event_member_expression _ ")" { member.multi = true; return member; }
 
 event_filter_expression
   = op:filter_operator _ "(" _ member:event_member_expression _ "," _ value:literal _ ")" { return function(o) { op(o, member.field, value); }; }

@@ -197,42 +197,6 @@ suite.addBatch({
     }
   },
 
-  "a grouped expression": {
-    topic: parser.parse("sum(test(bar).group(foo))"),
-    "has the expected expression": function(e) {
-      var filter = {}, fields = {}, group = {};
-      e.filter(filter);
-      e.fields(fields);
-      e.group.fields(group);
-      assert.deepEqual(filter, {"d.bar": {$exists: true}});
-      assert.deepEqual(fields, {"d.bar": 1});
-      assert.deepEqual(group, {"d.foo": 1});
-      assert.equal(e.type, "test");
-      assert.equal(e.reduce, "sum");
-      assert.equal(e.value({d: {bar: 42}}), 42);
-      assert.equal(e.group.field, "d.foo");
-      assert.isTrue(!e.group.multi);
-    }
-  },
-
-  "a multi-grouped (labeled) expression": {
-    topic: parser.parse("sum(test(bar).groups(foo))"),
-    "has the expected expression": function(e) {
-      var filter = {}, fields = {}, group = {};
-      e.filter(filter);
-      e.fields(fields);
-      e.group.fields(group);
-      assert.deepEqual(filter, {"d.bar": {$exists: true}});
-      assert.deepEqual(fields, {"d.bar": 1});
-      assert.deepEqual(group, {"d.foo": 1});
-      assert.equal(e.type, "test");
-      assert.equal(e.reduce, "sum");
-      assert.equal(e.value({d: {bar: 42}}), 42);
-      assert.equal(e.group.field, "d.foo");
-      assert.isTrue(e.group.multi);
-    }
-  },
-
   "filters": {
     "multiple filters on the same field are combined": function() {
       var filter = {};

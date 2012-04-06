@@ -145,15 +145,16 @@ function metricTest(request, expected) {
     var test = {
       topic: function() {
         var actual = [],
-            total = expected.length,
             timeout = setTimeout(function() { cb("Time's up!"); }, 10000),
             cb = this.callback,
             req = Object.create(request);
         req.step = step;
         arguments[depth](req, function(response) {
-          if (actual.push(response) >= total) {
+          if (response == null) {
             clearTimeout(timeout);
             cb(null, actual.sort(function(a, b) { return a.time - b.time; }));
+          } else {
+            actual.push(response);
           }
         });
       }
