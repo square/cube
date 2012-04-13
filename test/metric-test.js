@@ -150,7 +150,7 @@ function metricTest(request, expected) {
             req = Object.create(request);
         req.step = step;
         arguments[depth](req, function(response) {
-          if (response == null) {
+          if (response.time >= stop) {
             clearTimeout(timeout);
             cb(null, actual.sort(function(a, b) { return a.time - b.time; }));
           } else {
