@@ -12,7 +12,7 @@
     "mongodb": "0.9.9-7",
     "pegjs": "0.6.2",
     "vows": "0.5.11",
-    "websocket": "1.0.2",
+    "websocket": "1.0.4",
     "websocket-server": "1.4.04"
   }
 }
