@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<h1>Streaming Events - Put</h1>
+
+<p>This page streams events to Cube's collector (the /event/put endpoint) and logs them to the JavaScript console. If you open <a href="event-get.html" target="_blank">event-get.html</a> in a new window, you can verify that Cube is receiving the events.
+
+<script>
+
+var index = 0;
+
+var socket = new WebSocket("ws://localhost:1080/1.0/event/put");
+
+socket.onopen = function() {
+  console.log("connected!");
+  setInterval(function() {
+    socket.send(JSON.stringify({
+      type: "test",
+      time: new Date(),
+      data: {index: ++index}
+    }));
+    console.log("sent", index);
+  }, 1000);
+};
+
+socket.onmessage = function(message) {
+  var event = JSON.parse(message.data);
+  console.log("received", event);
+};
+
+socket.onclose = function() {
+  console.log("closed");
+};
+
+socket.onerror = function(error) {
+  console.log("error", error);
+};
+
+</script>
