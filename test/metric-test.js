@@ -22,15 +22,19 @@ steps[2592e6].description = "1-month";
 
 suite.addBatch(test.batch({
   topic: function(test) {
-    var emit = event.putter(test.db);
+    var putter = event.putter(test.db),
+        getter = metric.getter(test.db),
+        callback = this.callback;
+
     for (var i = 0; i < 2500; i++) {
-      emit({
+      putter({
         type: "test",
         time: new Date(Date.UTC(2011, 6, 18, 0, Math.sqrt(i) - 10)).toISOString(),
         data: {i: i}
       });
     }
-    return metric.getter(test.db);
+
+    setTimeout(function() { callback(null, getter); }, 500);
   },
 
   "unary expression": metricTest({
