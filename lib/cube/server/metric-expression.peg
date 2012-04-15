@@ -117,7 +117,7 @@ metric_unary_expression
   / metric_primary_expression
 
 metric_primary_expression
-  = reduce:identifier _ "(" _ event:event_expression _ ")" { event.reduce = reduce; event.source = input.substring(savedPos1, pos); return event; }
+  = reduce:reduce _ "(" _ event:event_expression _ ")" { event.reduce = reduce; event.source = input.substring(savedPos1, pos); return event; }
   / value:number { return {value: function() { return value; }}; }
   / "(" _ expression:metric_additive_expression _ ")" { return expression; }
 
@@ -136,8 +136,8 @@ event_filter_expression
   = op:filter_operator _ "(" _ member:event_member_expression _ "," _ value:literal _ ")" { return function(o) { op(o, member.field, value); }; }
 
 event_value_expression
-  = type:identifier _ "(" _ value:event_additive_expression _ ")" { value.type = type; return value; }
-  / type:identifier { return {type: type, value: one, exists: noop, fields: noop}; }
+  = type:type _ "(" _ value:event_additive_expression _ ")" { value.type = type; return value; }
+  / type:type { return {type: type, value: one, exists: noop, fields: noop}; }
 
 event_additive_expression
   = head:event_multiplicative_expression tail:(_ additive_operator _ event_additive_expression)* { return compoundValue(head, tail); }
@@ -177,6 +177,16 @@ filter_operator
   / "ne" { return filterNotEqual; }
   / "re" { return filterRegularExpression; }
   / "in" { return filterIn; }
+
+reduce
+  = "sum"
+  / "min"
+  / "max"
+  / "distinct"
+  / "median"
+
+type
+  = first:[a-z] rest:[a-zA-Z0-9_]+ { return first + rest.join(""); }
 
 identifier
   = first:[a-zA-Z_$] rest:[a-zA-Z0-9_$]* { return first + rest.join(""); }

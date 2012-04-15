@@ -90,8 +90,8 @@ event_filter_expression
   = op:filter_operator _ "(" _ member:event_member_expression _ "," _ value:literal _ ")" { return function(o) { op(o, member.field, value); }; }
 
 event_value_expression
-  = type:identifier _ "(" _ head:event_member_expression tail:(_ "," _ event_member_expression)* _ ")" { return compoundFields(type, head, tail); }
-  / type:identifier { return {type: type, exists: noop, fields: noop}; }
+  = type:type _ "(" _ head:event_member_expression tail:(_ "," _ event_member_expression)* _ ")" { return compoundFields(type, head, tail); }
+  / type:type { return {type: type, exists: noop, fields: noop}; }
 
 event_member_expression
   = head:identifier tail:(
@@ -108,6 +108,9 @@ filter_operator
   / "ne" { return filterNotEqual; }
   / "re" { return filterRegularExpression; }
   / "in" { return filterIn; }
+
+type
+  = first:[a-z] rest:[a-zA-Z0-9_]+ { return first + rest.join(""); }
 
 identifier
   = first:[a-zA-Z_$] rest:[a-zA-Z0-9_$]* { return first + rest.join(""); }
