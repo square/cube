@@ -113,7 +113,7 @@ type
   = first:[a-z] rest:[a-zA-Z0-9_]+ { return first + rest.join(""); }
 
 identifier
-  = first:[a-zA-Z_$] rest:[a-zA-Z0-9_$]* { return first + rest.join(""); }
+  = first:[a-zA-Z_] rest:[a-zA-Z0-9_$]* { return first + rest.join(""); }
 
 literal
   = array_literal
