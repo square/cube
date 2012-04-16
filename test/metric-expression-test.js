@@ -50,6 +50,9 @@ suite.addBatch({
     "returns the specified field value": function(e) {
       assert.equal(e.value({d: {i: 42}}), 42);
       assert.equal(e.value({d: {i: -1}}), -1);
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "sum(test(i))");
     }
   },
 
@@ -68,6 +71,9 @@ suite.addBatch({
     "computes the specified value expression": function(e) {
       assert.equal(e.value({d: {i: 42}}), 1804);
       assert.equal(e.value({d: {i: -1}}), -2);
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "sum(test(i + i * i - 2))");
     }
   },
 
@@ -82,6 +88,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": {$gt: 42}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "sum(test(i).gt(i, 42))");
     }
   },
 
@@ -96,6 +105,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": {$gt: 42}, "d.j": "foo"});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "sum(test.gt(i, 42).eq(j, \"foo\"))");
     }
   },
 
@@ -114,6 +126,9 @@ suite.addBatch({
     "computes the specified value expression": function(e) {
       assert.equal(e.value({d: {i: {j: 42}}}), 42);
       assert.equal(e.value({d: {i: {j: -1}}}), -1);
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "sum(test(i.j))");
     }
   },
 
@@ -132,6 +147,9 @@ suite.addBatch({
     "computes the specified value expression": function(e) {
       assert.equal(e.value({d: {i: [42]}}), 42);
       assert.equal(e.value({d: {i: [-1]}}), -1);
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "sum(test(i[0]))");
     }
   },
 
@@ -150,10 +168,13 @@ suite.addBatch({
     "computes the specified value expression": function(e) {
       assert.equal(e.value({d: {i: {j: [{k: 42}]}}}), 42);
       assert.equal(e.value({d: {i: {j: [{k: -1}]}}}), -1);
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "sum(test(i.j[0].k))");
     }
   },
 
-  "a compound expression": {
+  "a compound expression of two unary expressions": {
     topic: parser.parse("sum(foo(2)) + sum(bar(3))"),
     "is compound (has an associated binary operator)": function(e) {
       assert.equal(e.op.name, "add");
@@ -164,6 +185,7 @@ suite.addBatch({
       e.left.fields(fields);
       assert.deepEqual(filter, {});
       assert.deepEqual(fields, {});
+      assert.equal(e.left.source, "sum(foo(2))");
       assert.equal(e.left.type, "foo");
       assert.equal(e.left.reduce, "sum");
       assert.equal(e.left.value(), 2);
@@ -174,12 +196,27 @@ suite.addBatch({
       e.right.fields(fields);
       assert.deepEqual(filter, {});
       assert.deepEqual(fields, {});
+      assert.equal(e.right.source, "sum(bar(3))");
       assert.equal(e.right.type, "bar");
       assert.equal(e.right.reduce, "sum");
       assert.equal(e.right.value(), 3);
     },
+    "does not have a source": function(e) {
+      assert.isUndefined(e.source);
+    },
     "computes the specified value expression": function(e) {
       assert.equal(e.op(2, 3), 5)
+    }
+  },
+
+  "a compound expression of three unary expressions": {
+    topic: parser.parse("sum(foo(2)) + median(bar(3)) + max(baz(qux))"),
+    "has the expected subexpression sources": function(e) {
+      assert.isUndefined(e.source);
+      assert.equal(e.left.source, "sum(foo(2))");
+      assert.isUndefined(e.right.source);
+      assert.equal(e.right.left.source, "median(bar(3))");
+      assert.equal(e.right.right.source, "max(baz(qux))");
     }
   },
 
@@ -187,6 +224,9 @@ suite.addBatch({
     topic: parser.parse("-sum(foo)"),
     "negates the specified value expression": function(e) {
       assert.equal(e.value(), -1)
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "-sum(foo)");
     }
   },
 
@@ -194,6 +234,9 @@ suite.addBatch({
     topic: parser.parse("-4"),
     "has a constant value": function(e) {
       assert.equal(e.value(), -4)
+    },
+    "does not have a source": function(e) {
+      assert.isUndefined(e.source);
     }
   },
 

@@ -113,11 +113,11 @@ metric_multiplicative_expression
   = head:metric_unary_expression tail:(_ multiplicative_operator _ metric_multiplicative_expression)* { return compoundMetric(head, tail); }
 
 metric_unary_expression
-  = "-" _ expression:metric_unary_expression { var value = expression.value; expression.value = function(o) { return -value(o); }; return expression; }
+  = "-" _ expression:metric_unary_expression { var value = expression.value; expression.value = function(o) { return -value(o); }; if (expression.source) expression.source = "-" + expression.source; return expression; }
   / metric_primary_expression
 
 metric_primary_expression
-  = reduce:reduce _ "(" _ event:event_expression _ ")" { event.reduce = reduce; event.source = input.substring(savedPos1, pos); return event; }
+  = reduce:reduce _ "(" _ event:event_expression _ ")" { event.reduce = reduce; event.source = input.substring(savedPos3, pos); return event; }
   / value:number { return {value: function() { return value; }}; }
   / "(" _ expression:metric_additive_expression _ ")" { return expression; }
 
