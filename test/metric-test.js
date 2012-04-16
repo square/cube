@@ -1,24 +1,24 @@
 var vows = require("vows"),
     assert = require("assert"),
     test = require("./test"),
-    event = require("../lib/cube/server/event"),
-    metric = require("../lib/cube/server/metric");
+    event = require("../lib/cube/event"),
+    metric = require("../lib/cube/metric");
 
 var suite = vows.describe("metric");
 
 var steps = {
+  1e4: function(date, n) { return new Date((Math.floor(date / 1e4) + n) * 1e4); },
+  6e4: function(date, n) { return new Date((Math.floor(date / 6e4) + n) * 6e4); },
   3e5: function(date, n) { return new Date((Math.floor(date / 3e5) + n) * 3e5); },
   36e5: function(date, n) { return new Date((Math.floor(date / 36e5) + n) * 36e5); },
-  864e5: function(date, n) { return new Date((Math.floor(date / 864e5) + n) * 864e5); },
-  6048e5: function(date, n) { (date = steps[864e5](date, n * 7)).setUTCDate(date.getUTCDate() - date.getUTCDay()); return date; },
-  2592e6: function(date, n) { return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + n, 1)); }
+  864e5: function(date, n) { return new Date((Math.floor(date / 864e5) + n) * 864e5); }
 };
 
+steps[1e4].description = "10-second";
+steps[6e4].description = "1-minute";
 steps[3e5].description = "5-minute";
 steps[36e5].description = "1-hour";
 steps[864e5].description = "1-day";
-steps[6048e5].description = "1-week";
-steps[2592e6].description = "1-month";
 
 suite.addBatch(test.batch({
   topic: function(test) {
@@ -42,11 +42,10 @@ suite.addBatch(test.batch({
       start: "2011-07-17T23:47:00.000Z",
       stop: "2011-07-18T00:50:00.000Z",
     }, {
+      6e4: [0, 0, 0, 1, 1, 3, 5, 7, 9, 11, 13, 15, 17, 39, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 69, 71, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93, 95, 97, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       3e5: [0, 17, 65, 143, 175, 225, 275, 325, 375, 425, 475, 0, 0],
       36e5: [82, 2418],
-      864e5: [82, 2418],
-      6048e5: [2500],
-      2592e6: [2500]
+      864e5: [82, 2418]
     }
   ),
 
@@ -57,9 +56,7 @@ suite.addBatch(test.batch({
     }, {
       3e5: [0, 136, 3185, 21879, 54600, 115200, 209550, 345150, 529500, 770100, 1074450, 0, 0],
       36e5: [3321, 3120429],
-      864e5: [3321, 3120429],
-      6048e5: [3123750],
-      2592e6: [3123750]
+      864e5: [3321, 3120429]
     }
   ),
 
@@ -70,9 +67,7 @@ suite.addBatch(test.batch({
     }, {
       3e5: [0, 1.36, 31.85, 218.79, 546, 1152, 2095.5, 3451.5, 5295, 7701, 10744.5, 0, 0],
       36e5: [33.21, 31204.29],
-      864e5: [33.21, 31204.29],
-      6048e5: [31237.5],
-      2592e6: [31237.5]
+      864e5: [33.21, 31204.29]
     }
   ),
 
@@ -83,9 +78,7 @@ suite.addBatch(test.batch({
     }, {
       3e5: [NaN, 16, 64, 142, 174, 224, 274, 324, 374, 424, 474, NaN, NaN],
       36e5: [81, 2417],
-      864e5: [81, 2417],
-      6048e5: [2499],
-      2592e6: [2499]
+      864e5: [81, 2417]
     }
   ),
 
@@ -96,9 +89,7 @@ suite.addBatch(test.batch({
     }, {
       3e5: [0, 17, 65, 143, 175, 225, 275, 325, 375, 425, 475, 0, 0],
       36e5: [82, 2418],
-      864e5: [82, 2418],
-      6048e5: [2500],
-      2592e6: [2500]
+      864e5: [82, 2418]
     }
   ),
 
@@ -109,9 +100,7 @@ suite.addBatch(test.batch({
     }, {
       3e5: [NaN, 128, 3136, 21726, 54288, 114688, 208788, 344088, 528088, 768288, 1072188, NaN, NaN],
       36e5: [3280.5, 3119138.5],
-      864e5: [3280.5, 3119138.5],
-      6048e5: [3122500.5],
-      2592e6: [3122500.5]
+      864e5: [3280.5, 3119138.5]
     }
   ),
 
@@ -122,9 +111,7 @@ suite.addBatch(test.batch({
     }, {
       3e5: [-1, 16, 64, 142, 174, 224, 274, 324, 374, 424, 474, -1, -1],
       36e5: [81, 2417],
-      864e5: [81, 2417],
-      6048e5: [2499],
-      2592e6: [2499]
+      864e5: [81, 2417]
     }
   )
 }));
@@ -201,6 +188,8 @@ function metricTest(request, expected) {
       assert.deepEqual(actual.map(function(d) { return d.time; }), times);
 
       // returns the expected values
+      var actualValues = actual.map(function(d) { return d.value; });
+      assert.equal(expected.length, actual.length, "expected " + expected + ", got " + actualValues);
       expected.forEach(function(value, i) {
         if (Math.abs(actual[i].value - value) > 1e-6) {
           assert.fail(actual.map(function(d) { return d.value; }), expected, "expected {expected}, got {actual} at " + actual[i].time.toISOString());

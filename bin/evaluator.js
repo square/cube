@@ -4,7 +4,6 @@ var options = require("./evaluator-config"),
 
 server.register = function(db, endpoints) {
   cube.evaluator.register(db, endpoints);
-  cube.visualizer.register(db, endpoints);
 };
 
 server.start();

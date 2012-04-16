@@ -1,7 +1,7 @@
 var vows = require("vows"),
     assert = require("assert"),
     test = require("./test"),
-    types = require("../lib/cube/server/types"),
+    types = require("../lib/cube/types"),
     mongodb = require("mongodb");
 
 var suite = vows.describe("types");

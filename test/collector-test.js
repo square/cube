@@ -28,7 +28,7 @@ suite.addBatch(test.batch({
     topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, "This ain't JSON.\n"),
     "responds with status 400": function(response) {
       assert.equal(response.statusCode, 400);
-      assert.deepEqual(JSON.parse(response.body), {status: 400});
+      assert.deepEqual(JSON.parse(response.body), {error: "SyntaxError: Unexpected token T"});
     }
   }
 }));
@@ -38,7 +38,7 @@ suite.addBatch(test.batch({
     topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify(obj)),
     "responds with status 400": function(response) {
       assert.equal(response.statusCode, 400);
-      assert.deepEqual(JSON.parse(response.body), {status: 400});
+      assert.deepEqual(JSON.parse(response.body), {error: "TypeError: Object #<Object> has no method 'forEach'"});
     }
   }
 }));
@@ -48,7 +48,7 @@ suite.addBatch(test.batch({
     topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify(arr)),
     "responds with status 200": function(response) {
       assert.equal(response.statusCode, 200);
-      assert.deepEqual(JSON.parse(response.body), {status: 200});
+      assert.deepEqual(JSON.parse(response.body), {});
     }
   }
 }));
@@ -58,7 +58,7 @@ suite.addBatch(test.batch({
     topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify(num)),
     "responds with status 400": function(response) {
       assert.equal(response.statusCode, 400);
-      assert.deepEqual(JSON.parse(response.body), {status: 400});
+      assert.deepEqual(JSON.parse(response.body), {error: "TypeError: Object 42 has no method 'forEach'"});
     }
   }
 }));

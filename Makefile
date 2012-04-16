@@ -7,8 +7,8 @@ PEG_COMPILER = ./node_modules/pegjs/bin/pegjs
 	$(PEG_COMPILER) < $< > $@
 
 all: \
-	lib/cube/server/event-expression.js \
-	lib/cube/server/metric-expression.js
+	lib/cube/event-expression.js \
+	lib/cube/metric-expression.js
 
 test: all
 	@$(JS_TESTER)

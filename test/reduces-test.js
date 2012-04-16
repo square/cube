@@ -1,6 +1,6 @@
 var vows = require("vows"),
     assert = require("assert"),
-    reduces = require("../lib/cube/server/reduces");
+    reduces = require("../lib/cube/reduces");
 
 var suite = vows.describe("reduces");
 

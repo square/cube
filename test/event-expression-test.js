@@ -1,6 +1,6 @@
 var vows = require("vows"),
     assert = require("assert"),
-    parser = require("../lib/cube/server/event-expression");
+    parser = require("../lib/cube/event-expression");
 
 var suite = vows.describe("event-expression");
 
