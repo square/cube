@@ -20,6 +20,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test");
     }
   },
 
@@ -34,6 +37,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": {$exists: true}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test(i)");
     }
   },
 
@@ -48,6 +54,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": {$exists: true}, "d.j": {$exists: true}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test(i, j)");
     }
   },
 
@@ -62,6 +71,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": {$gt: 42}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test(i).gt(i, 42)");
     }
   },
 
@@ -85,6 +97,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": {$gt: 42, $lte: 52}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test.gt(i, 42).le(i, 52)");
     }
   },
 
@@ -94,6 +109,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": 52});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test.gt(i, 42).eq(i, 52)");
     }
   },
 
@@ -103,6 +121,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": 52});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test.eq(i, 52).gt(i, 42)");
     }
   },
 
@@ -117,6 +138,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i.j": {$exists: true}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test(i.j)");
     }
   },
 
@@ -131,6 +155,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i": {$exists: true}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test(i[0])");
     }
   },
 
@@ -145,6 +172,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i.j.k": {$exists: true}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test(i.j[0].k)");
     }
   },
 
@@ -159,6 +189,9 @@ suite.addBatch({
       var filter = {};
       e.filter(filter);
       assert.deepEqual(filter, {"d.i.j.0.k": {$gt: 42}});
+    },
+    "has the expected source": function(e) {
+      assert.equal(e.source, "test.gt(i.j[0].k, 42)");
     }
   },
 

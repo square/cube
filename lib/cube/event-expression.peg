@@ -73,7 +73,7 @@
 }
 
 start
-  = _ expression:event_expression _ { return expression; }
+  = _ expression:event_expression _ { expression.source = input; return expression; }
 
 event_expression
   = value:event_value_expression filters:(_ "." _ event_filter_expression)*
