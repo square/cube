@@ -138,16 +138,19 @@ function metricTest(request, expected) {
         var actual = [],
             timeout = setTimeout(function() { cb("Time's up!"); }, 10000),
             cb = this.callback,
-            req = Object.create(request);
+            req = Object.create(request),
+            test = arguments[depth];
         req.step = step;
-        arguments[depth](req, function(response) {
-          if (response.time >= stop) {
-            clearTimeout(timeout);
-            cb(null, actual.sort(function(a, b) { return a.time - b.time; }));
-          } else {
-            actual.push(response);
-          }
-        });
+        setTimeout(function() {
+          test(req, function(response) {
+            if (response.time >= stop) {
+              clearTimeout(timeout);
+              cb(null, actual.sort(function(a, b) { return a.time - b.time; }));
+            } else {
+              actual.push(response);
+            }
+          });
+        }, depth * 250);
       }
     };
 
