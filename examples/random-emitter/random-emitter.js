@@ -1,7 +1,7 @@
 process.env.TZ = 'UTC';
 
 var util = require("util"),
-    cube = require("../../../"), // replace with require("cube")
+    cube = require("../../"), // replace with require("cube")
     options = require("./random-config");
 
 util.log("starting websocket client");
