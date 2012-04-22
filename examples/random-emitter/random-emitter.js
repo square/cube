@@ -4,8 +4,8 @@ var util = require("util"),
     cube = require("../../"), // replace with require("cube")
     options = require("./random-config");
 
-util.log("starting websocket client");
-var emitter = cube.emitter().open(options["http-host"], options["http-port"]);
+util.log("starting emitter");
+var emitter = cube.emitter(options["collector"]);
 
 var start = Date.now() + options["offset"],
     stop = start + options["duration"],
@@ -26,5 +26,5 @@ while (start < stop) {
 }
 
 util.log("sent " + count + " events");
-util.log("stopping websocket client");
+util.log("stopping emitter");
 emitter.close();

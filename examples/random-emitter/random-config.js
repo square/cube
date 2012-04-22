@@ -1,8 +1,7 @@
 module.exports = {
 
   // The collector to send events to.
-  "http-host": "127.0.0.1",
-  "http-port": 1080,
+  "collector": "ws://127.0.0.1:1080",
 
   // The offset and duration to backfill, in milliseconds.
   // For example, if the offset is minus four hours, then the first event that
