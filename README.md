@@ -14,9 +14,8 @@ See <http://github.com/square/cube/wiki> for documentation.
 
 Cube is built with the following open-source systems and libraries:
 
-* [D3.js](http://mbostock.github.com/d3/)
 * [MongoDB](http://www.mongodb.org/)
-* [node-mongodb-native](/christkv/node-mongodb-native)
+* [node-mongodb-native](/mongodb/node-mongodb-native)
 * [Node.js](http://nodejs.org/)
 * [PEG.js](http://pegjs.majda.cz/)
 * [Vows](http://vowsjs.org/)
