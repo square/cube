@@ -1,91 +1,45 @@
+html {
+  min-width: 1040px;
+}
+
 body {
-  position: relative;
   font-family: "Helvetica Neue";
-  width: 960px;
   margin: auto;
-  text-rendering: optimizeLegibility;
-}
-
-header {
-  position: absolute;
-  top: 130px;
-  margin-left: -20px;
-  padding: 10px 20px 30px 20px;
+  margin-top: 40px;
+  margin-bottom: 4em;
   width: 960px;
-  z-index: 2;
-  background-image: -moz-linear-gradient(bottom, rgba(255, 255, 255, 0), white 30%, white);
-  background-image: -o-linear-gradient(bottom, rgba(255, 255, 255, 0), white 30%, white);
-  background-image: -webkit-gradient(linear, left bottom, left top, from(rgba(255, 255, 255, 0)), to(white), color-stop(.3, white));
 }
 
-header.fixed {
-  position: fixed;
-  top: 0px;
-}
-
-header a {
-  padding: 0 10px 0 0;
-}
-
-h1 {
-  font-size: 72pt;
-}
-
-h1, h2 {
-  font-family: "Yanone Kaffeesatz";
+#body {
   position: relative;
 }
 
-h2 a {
-  position: absolute;
-  left: -1em;
-  width: 100%;
-  visibility: hidden;
-}
-
-h2:hover a {
-  visibility: visible;
-}
-
-h1 {
-  margin-top: 40px;
-  height: 120px;
-  background-image: url(screenshot.png);
-}
-
-pre {
-  background: #fff;
-  padding: 1em;
-  margin: 2em 0 2em 0;
-}
-
-p {
-  padding-right: 240px;
+footer {
+  font-size: small;
+  margin-top: 8em;
 }
 
 aside {
+  font-size: small;
+  left: 780px;
   position: absolute;
-  left: 740px;
-  font-size: smaller;
-  width: 220px;
-  z-index: 1;
+  width: 180px;
 }
 
-aside p {
-  margin: 0 0 1em 0;
-  padding: 0;
+#body > p, li > p {
+  line-height: 1.5em;
 }
 
-aside.pre {
-  margin-top: 3em;
+#body > p {
+  width: 720px;
 }
 
-aside.pre p {
-  margin-right: 1em;
+#body > blockquote {
+  width: 640px;
 }
 
-code {
-  font-family: "Menlo", monospace;
+li {
+  width: 680px;
 }
 
 a {
@@ -96,69 +50,172 @@ a:not(:hover) {
   text-decoration: none;
 }
 
-.string, .regexp {
-  color: #f39;
+pre, code, textarea {
+  font-family: "Menlo", monospace;
 }
 
-.keyword {
-  color: #00c;
+code {
+  line-height: 1em;
+}
+
+textarea {
+  font-size: 100%;
+}
+
+#body > pre {
+  border-left: solid 2px #ccc;
+  padding-left: 18px;
+  margin: 2em 0 2em -20px;
+}
+
+.html .value,
+.javascript .string,
+.javascript .regexp {
+  color: #756bb1;
+}
+
+.html .tag,
+.css .tag,
+.javascript .keyword {
+  color: #3182bd;
 }
 
 .comment {
-  color: #555;
+  color: #636363;
 }
 
-.number {
-  color: #369;
+.html .doctype,
+.javascript .number {
+  color: #31a354;
 }
 
-.class, .special {
-  color: #1181B8;
+.html .attribute,
+.css .attribute,
+.javascript .class,
+.javascript .special {
+  color: #e6550d;
 }
 
-.image {
-  background-position: right;
-  background-repeat: no-repeat;
-  height: 110px;
+svg {
+  font: 10px sans-serif;
 }
 
-footer {
-  padding: 2em 0 1em 0;
-  font-size: 10pt;
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
 }
 
-.curl {
-  position: relative;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+sup, sub {
+  line-height: 0;
 }
 
-.curl:before,
-.curl:after {
-  content: '';
-  z-index: -1;
+q:before,
+blockquote:before {
+  content: "“";
+}
+
+q:after,
+blockquote:after {
+  content: "”";
+}
+
+blockquote:before {
   position: absolute;
-  bottom: 0;
-  width: 50%;
-  height: 50%;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+  left: 2em;
 }
 
-.curl:before {
-  left: 0;
-  -moz-transform: skew(-10deg) rotate(-2deg);
-  -moz-transform-origin: 0% 100%;
-  -o-transform: skew(-10deg) rotate(-2deg);
-  -o-transform-origin: 0% 100%;
-  -webkit-transform: skew(-10deg) rotate(-2deg);
-  -webkit-transform-origin: 0% 100%;
+blockquote:after {
+  position: absolute;
 }
 
-.curl:after {
+h1 {
+  font-size: 96px;
+  margin-top: .3em;
+  margin-bottom: 0;
+}
+
+h1 + h2 {
+  margin-top: 0;
+}
+
+h2 {
+  font-weight: 400;
+  font-size: 28px;
+}
+
+h1, h2 {
+  font-family: "Yanone Kaffeesatz";
+  text-rendering: optimizeLegibility;
+}
+
+#logo {
+  width: 122px;
+  height: 31px;
+}
+
+#fork {
+  position: absolute;
+  top: 0;
   right: 0;
-  -moz-transform: skew(10deg) rotate(2deg);
-  -moz-transform-origin: 100% 100%;
-  -o-transform: skew(10deg) rotate(2deg);
-  -o-transform-origin: 100% 100%;
-  -webkit-transform: skew(10deg) rotate(2deg);
-  -webkit-transform-origin: 100% 100%;
+}
+
+.axis {
+  font: 10px sans-serif;
+}
+
+.axis text {
+  -webkit-transition: fill-opacity 250ms linear;
+}
+
+.axis path {
+  display: none;
+}
+
+.axis line {
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.horizon {
+  border-bottom: solid 1px #000;
+  overflow: hidden;
+  position: relative;
+}
+
+.horizon {
+  border-top: solid 1px #000;
+  border-bottom: solid 1px #000;
+}
+
+.horizon + .horizon {
+  border-top: none;
+}
+
+.horizon canvas {
+  display: block;
+}
+
+.horizon .title,
+.horizon .value {
+  bottom: 0;
+  line-height: 30px;
+  margin: 0 6px;
+  position: absolute;
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  white-space: nowrap;
+}
+
+.horizon .title {
+  left: 0;
+}
+
+.horizon .value {
+  right: 0;
+}
+
+.line {
+  background: #000;
+  opacity: .2;
+  z-index: 2;
 }
