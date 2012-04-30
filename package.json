@@ -1,6 +1,6 @@
 {
   "name": "cube",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A system for analyzing time series data using MongoDB and Node.",
   "keywords": ["time series"],
   "homepage": "http://square.github.com/cube/",
