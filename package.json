@@ -8,11 +8,12 @@
   "repository": {"type": "git", "url": "http://github.com/square/cube.git"},
   "main": "./lib/cube",
   "dependencies": {
-    "mongodb": "1.0.1",
-    "node-static": "0.5.9",
-    "pegjs": "0.6.2",
-    "vows": "0.5.11",
-    "websocket": "1.0.3",
+    "mongodb":          "1.0.1",
+    "node-static":      "0.5.9",
+    "pegjs":            "0.6.2",
+    "vows":             "0.5.11",
+    "node-gyp":         "0.6.8",
+    "websocket":        "1.0.3",
     "websocket-server": "1.4.04"
   }
 }
