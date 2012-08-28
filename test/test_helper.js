@@ -6,6 +6,8 @@ var assert      = require("assert"),
 exports.port  = 1083;
 exports.batch = test_db.batch;
 
+exports.inspectify = metalog.inspectify;
+
 exports.request = function(options, data) {
   return function() {
     var cb = this.callback;

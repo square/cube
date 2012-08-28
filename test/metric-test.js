@@ -31,6 +31,7 @@ suite.addBatch(test_helper.batch({
         getter = metric.getter(test_db.db),
         callback = this.callback;
 
+    // Seed the events table with a simple event: a value going from 0 to 2499
     for (var i = 0; i < 2500; i++) {
       putter({
         type: "test",
@@ -39,6 +40,7 @@ suite.addBatch(test_helper.batch({
       });
     }
 
+    // So the events can settle in, wait `batch_testing_delay` ms before continuing
     setTimeout(function() { callback(null, getter); }, batch_testing_delay);
   },
 
@@ -123,69 +125,121 @@ suite.addBatch(test_helper.batch({
 
 suite.export(module);
 
+// metricTest -- generates test tree for metrics.
+//
+// Gets the metric, checks it was calculated correctly from events seeded above;
+// then does it again (on a delay) to check that it was cached.
+//
+// @example given `{ 'unary expression': metricTest({..}, { 60_000: [0, 0, ...], 86_400_000: [82, 2418] })`
+//
+//    { 'unary expression': {
+//        'at 1-minute intervals': {
+//          topic:       function get_metrics_with_delay(getter){},
+//          'sum(test)': function metrics_assertions(actual){},
+//          '(cached)': {
+//            topic:       function get_metrics_with_delay(_, getter){},
+//            'sum(test)': function metrics_assertions(actual){} } },
+//        'at 1-day intervals': {
+//          topic:       function get_metrics_with_delay(getter){},
+//          'sum(test)': function metrics_assertions(actual){},
+//          '(cached)': {
+//            topic:       function get_metrics_with_delay(_, getter){},
+//            'sum(test)': function metrics_assertions(actual){} } }
+//      }
+//    }
+//
 function metricTest(request, expected) {
-  var t = {}, k;
-  for (k in expected) t["at " + steps[k].description + " intervals"] = testStep(k, expected[k]);
-  return t;
+  // { 'at 1-minute intervals': { }, 'at 1-day intervals': { } }
+  var tree = {}, k;
+  for (step in expected) tree["at " + steps[step].description + " intervals"] = testStep(step, expected[step]);
+  return tree;
 
+  //
+  // {
+  //   topic: get_metrics_with_delay,
+  //   expression: function(){
+  //     // rounds down the start time (inclusive)
+  //     // formats UTC time in ISO 8601
+  //     ...
+  //     // returns the expected values
+  //   },
+  //   '(cached)': {
+  //     topic: get_metrics_with_delay,
+  //     expression: function(){
+  //       // rounds down the start time (inclusive)
+  //       ...
+  //     }
+  //   }
+  // }
+  //
   function testStep(step, expected) {
-    var t = testStepDepth(0, step, expected);
-    t["(cached)"] = testStepDepth(1, step, expected);
-    return t;
-  }
-
-  function testStepDepth(depth, step, expected) {
     var start = new Date(request.start),
-        stop = new Date(request.stop);
+        stop  = new Date(request.stop);
 
-    var test = {
-      topic: function() {
-        var actual = [],
-            timeout = setTimeout(function() { cb("Time's up!"); }, 10000),
-            cb = this.callback,
-            req = Object.create(request),
-            test = arguments[depth];
-        req.step = step;
-        setTimeout(function() {
-          test(req, function(response) {
-            if (response.time >= stop) {
-              clearTimeout(timeout);
-              cb(null, actual.sort(function(a, b) { return a.time - b.time; }));
-            } else {
-              actual.push(response);
-            }
-          });
-        }, depth * step_testing_delay);
-      }
+    var subtree = {
+      topic:   get_metrics_with_delay(0),
+      '(cached)': {
+        topic: get_metrics_with_delay(1), }
     };
+    subtree[request.expression] = metrics_assertions();
+    subtree["(cached)"][request.expression] = metrics_assertions();
+    return subtree;
 
-    test[request.expression] = function(actual) {
+    function get_metrics_with_delay(depth){ return function(){
+      var actual   = [],
+          timeout  = setTimeout(function() { cb("Time's up!"); }, 10000),
+          cb       = this.callback,
+          req      = Object.create(request),
+          getter   = arguments[depth];
+          req.step = step;
+      // Wait long enough for the events to have settled in the db.  The
+      // non-cached (depth=0) round can all start in parallel, making this an
+      // effective `nextTick`. On the secon
+      setTimeout(function() {
+        // ... then invoke the metrics getter. As responses roll in, push them
+        // on to 'actual'; we're done when the 'stop' time is hit
+        getter(req, function(response) {
+          if (response.time >= stop) {
+            clearTimeout(timeout);
+            cb(null, actual.sort(function(a, b) { return a.time - b.time; }));
+          } else {
+            actual.push(response);
+          }
+        });
+      }, depth * step_testing_delay);
+    }};
 
-      // rounds down the start time (inclusive)
+    function metrics_assertions(){ return {
+      'rounds down the start time (inclusive)': function(actual) {
       var floor = steps[step](start, 0);
       assert.deepEqual(actual[0].time, floor);
+      },
 
-      // rounds up the stop time (exclusive)
+      'rounds up the stop time (exclusive)': function(actual){
       var ceil = steps[step](stop, 0);
       if (!(ceil - stop)) ceil = steps[step](stop, -1);
       assert.deepEqual(actual[actual.length - 1].time, ceil);
+      },
 
-      // formats UTC time in ISO 8601
+      'formats UTC time in ISO 8601': function(actual){
       actual.forEach(function(d) {
         assert.instanceOf(d.time, Date);
         assert.match(JSON.stringify(d.time), /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:00.000Z/);
       });
+      },
 
-      // returns exactly one value per time
+      'returns exactly one value per time': function(actual){
       var i = 0, n = actual.length, t = actual[0].time;
       while (++i < n) assert.isTrue(t < (t = actual[i].time));
+      },
 
-      // each metric defines only time and value properties
+      'each metric defines only time and value properties': function(actual){
       actual.forEach(function(d) {
         assert.deepEqual(Object.keys(d), ["time", "value"]);
       });
+      },
 
-      // returns the expected times
+      'returns the expected times': function(actual){
       var floor = steps[step],
           time = floor(start, 0),
           times = [];
@@ -194,8 +248,9 @@ function metricTest(request, expected) {
         time = floor(time, 1);
       }
       assert.deepEqual(actual.map(function(d) { return d.time; }), times);
+      },
 
-      // returns the expected values
+      'returns the expected values': function(actual){
       var actualValues = actual.map(function(d) { return d.value; });
       assert.equal(expected.length, actual.length, "expected " + expected + ", got " + actualValues);
       expected.forEach(function(value, i) {
@@ -203,9 +258,8 @@ function metricTest(request, expected) {
           assert.fail(actual.map(function(d) { return d.value; }), expected, "expected {expected}, got {actual} at " + actual[i].time.toISOString());
         }
       });
+      }
 
-    };
-
-    return test;
-  }
-}
+    }}; // metric assertions
+  } // subtree
+} // tree
