@@ -8,14 +8,17 @@
   "repository": {"type": "git", "url": "http://github.com/square/cube.git"},
   "main": "./lib/cube",
   "dependencies": {
-    "mongodb":          "1.0.1",
-    "node-static":      "0.5.9",
-    "pegjs":            "0.6.2",
-    "vows":             "0.5.11",
+    "mongodb":          "1.1.4",
+    "node-static":      "0.6.1",
+    "pegjs":            "0.7.0",
+    "vows":             "0.6.4",
     "node-gyp":         "0.6.8",
-    "websocket":        "1.0.3",
+    "websocket":        "1.0.7",
     "websocket-server": "1.4.04",
     "cookies":          "0.3.1",
     "bcrypt":           "0.7.1"
+  },
+  "scripts": {
+    "preinstall": "npm install mongodb --mongodb:native"
   }
 }
