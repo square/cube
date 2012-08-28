@@ -32,5 +32,4 @@ exports.request = function(options, data) {
 // Disable logging for tests.
 metalog.loggers.info  = metalog.silent;
 metalog.loggers.minor = metalog.silent;
-util.log = function() {};
 metalog.send_events = false;

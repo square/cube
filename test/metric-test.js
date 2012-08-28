@@ -4,6 +4,11 @@ var vows = require("vows"),
     event = require("../lib/cube/event"),
     metric = require("../lib/cube/metric");
 
+// as a hack to get updates to settle, we need to insert delays
+// if you see funny heisen-errors in the metrics tests try bumping these
+var step_testing_delay  = 250,
+    batch_testing_delay = 500;
+
 var suite = vows.describe("metric");
 
 var steps = {
@@ -34,7 +39,7 @@ suite.addBatch(test.batch({
       });
     }
 
-    setTimeout(function() { callback(null, getter); }, 500);
+    setTimeout(function() { callback(null, getter); }, batch_testing_delay);
   },
 
   "unary expression": metricTest({
@@ -71,7 +76,7 @@ suite.addBatch(test.batch({
     }
   ),
 
-  "compound expression": metricTest({
+  "compound expression (sometimes fails due to race condition?)": metricTest({
       expression: "max(test(i)) - min(test(i))",
       start: "2011-07-17T23:47:00.000Z",
       stop: "2011-07-18T00:50:00.000Z",
@@ -150,7 +155,7 @@ function metricTest(request, expected) {
               actual.push(response);
             }
           });
-        }, depth * 250);
+        }, depth * step_testing_delay);
       }
     };
 
