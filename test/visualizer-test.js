@@ -1,11 +1,11 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    cube = require("../"),
-    test = require("./test");
+var vows        = require("vows"),
+    assert      = require("assert"),
+    cube        = require("../"),
+    test_helper = require("./test_helper");
 
 var suite = vows.describe("visualizer");
 
-var port = ++test.port, server = cube.server({
+var port = ++test_helper.port, server = cube.server({
   "mongo-host": "localhost",
   "mongo-port": 27017,
   "mongo-database": "cube_test",

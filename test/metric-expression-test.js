@@ -1,6 +1,6 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    parser = require("../lib/cube/metric-expression");
+var vows        = require("vows"),
+    assert      = require("assert"),
+    parser      = require("../lib/cube/metric-expression");
 
 var suite = vows.describe("metric-expression");
 

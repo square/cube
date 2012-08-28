@@ -1,10 +1,8 @@
-var vows           = require("vows"),
-    assert         = require("assert"),
-    util           = require("util"),
-    metalog        = require("../lib/cube/metalog"),
-    authentication = require("../lib/cube/authentication"),
-    test_db        = require("./test_db"),
-    test           = require('./test');
+var vows        = require("vows"),
+    assert      = require("assert"),
+    test_helper = require('./test_helper'),
+    metalog     = require("../lib/cube/metalog"),
+    authentication = require("../lib/cube/authentication");
 
 var suite = vows.describe("authentication");
 suite.options.error = true;
@@ -48,10 +46,9 @@ function dummy_request(username, token){
   return({ headers: { cookie: authentication.gen_cookie("_cube_session", username+"_tok", token || dummy_token) } });
 };
 
-suite.addBatch(test_db.batch({
-
+suite.addBatch(test_helper.batch({
   mongo_cookie: {
-    topic: test_db.using_objects("test_users", test_users, this.callback),
+    topic: function(test_db){ test_db.using_objects("test_users", test_users, this) },
     "": {
       topic: function(test_db){
         return authentication.authenticator("mongo_cookie", test_db.db, { collection: "test_users" }); },

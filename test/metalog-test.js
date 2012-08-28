@@ -1,6 +1,6 @@
-var vows           = require("vows"),
-    assert         = require("assert"),
-    test           = require('./test');
+var vows        = require("vows"),
+    assert      = require("assert"),
+    test_helper = require('./test_helper');
 
 var suite = vows.describe("metalog");
 

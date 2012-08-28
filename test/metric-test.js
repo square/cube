@@ -1,11 +1,11 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    test = require("./test"),
-    event = require("../lib/cube/event"),
-    metric = require("../lib/cube/metric");
+var vows        = require("vows"),
+    assert      = require("assert"),
+    test_helper = require("./test_helper"),
+    event       = require("../lib/cube/event"),
+    metric      = require("../lib/cube/metric");
 
-// as a hack to get updates to settle, we need to insert delays
-// if you see funny heisen-errors in the metrics tests try bumping these
+// as a hack to get updates to settle, we need to insert delays.
+// if you see heisen-errors in the metrics tests, increase these.
 var step_testing_delay  = 250,
     batch_testing_delay = 500;
 
@@ -25,10 +25,10 @@ steps[3e5].description = "5-minute";
 steps[36e5].description = "1-hour";
 steps[864e5].description = "1-day";
 
-suite.addBatch(test.batch({
-  topic: function(test) {
-    var putter = event.putter(test.db),
-        getter = metric.getter(test.db),
+suite.addBatch(test_helper.batch({
+  topic: function(test_db) {
+    var putter = event.putter(test_db.db),
+        getter = metric.getter(test_db.db),
         callback = this.callback;
 
     for (var i = 0; i < 2500; i++) {

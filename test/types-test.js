@@ -1,14 +1,14 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    test = require("./test"),
-    types = require("../lib/cube/types"),
-    mongodb = require("mongodb");
+var vows        = require("vows"),
+    assert      = require("assert"),
+    mongodb     = require("mongodb"),
+    test_helper = require("./test_helper"),
+    types       = require("../lib/cube/types");
 
 var suite = vows.describe("types");
 
-suite.addBatch(test.batch({
-  topic: function(test) {
-    return types(test.db);
+suite.addBatch(test_helper.batch({
+  topic: function(test_db) {
+    return types(test_db.db);
   },
 
   "types": {

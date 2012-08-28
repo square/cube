@@ -1,11 +1,11 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    cube = require("../"),
-    test = require("./test");
+var vows        = require("vows"),
+    assert      = require("assert"),
+    test_helper = require("./test_helper"),
+    cube        = require("../");
 
 var suite = vows.describe("evaluator");
 
-var port = ++test.port, server = cube.server({
+var port = ++test_helper.port, server = cube.server({
   "mongo-host": "localhost",
   "mongo-port": 27017,
   "mongo-database": "cube_test",
@@ -20,9 +20,9 @@ server.register = function(db, endpoints) {
 
 server.start();
 
-// suite.addBatch(test.batch({
+// suite.addBatch(test_helper.batch({
 //   "GET /1.0/event": {
-//     topic: test.request({method: "GET", port: port, path: "/1.0/event"}),
+//     topic: test_helper.request({method: "GET", port: port, path: "/1.0/event"}),
 //     "responds with status 200": function(response) {
 //       assert.equal(response.statusCode, 200);
 //       assert.deepEqual(JSON.parse(response.body), {error: "SyntaxError: Unexpected token T"});

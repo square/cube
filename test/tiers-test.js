@@ -1,6 +1,6 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    tiers = require("../lib/cube/tiers");
+var vows        = require("vows"),
+    assert      = require("assert"),
+    tiers       = require("../lib/cube/tiers");
 
 var suite = vows.describe("tiers");
 

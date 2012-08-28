@@ -1,33 +1,29 @@
-var mongodb        = require("mongodb"),
-    util           = require("util"),
-    metalog        = require("../lib/cube/metalog");
+var mongodb = require("mongodb"),
+    metalog = require("../lib/cube/metalog");
 
 var test_db = { };
 
 var test_collections = ["test_users", "test_events", "test_metrics"];
 
-var options = exports.options = {
+var options = test_db.options = {
   "mongo-host":     "localhost",
   "mongo-port":     27017,
   "mongo-database": "cube_test"
 };
 
-exports.using_objects = function (clxn_name, test_objects){
+test_db.using_objects = function (clxn_name, test_objects, that){
   metalog.minor('cube_testdb', {state: 'loading test objects', test_objects: test_objects });
-  return function(tdb){
-    var that = this;
-    tdb.db.collection(clxn_name, function(err, clxn){
-      if (err) throw(err);
-      that[clxn_name] = clxn;
-      clxn.remove({ dummy: true }, {safe: true}, function(){
-        clxn.insert(test_objects, { safe: true }, function(){
-          that.callback(null);
-        }); });
-    });
-  };
+  test_db.db.collection(clxn_name, function(err, clxn){
+    if (err) throw(err);
+    that[clxn_name] = clxn;
+    clxn.remove({ dummy: true }, {safe: true}, function(){
+      clxn.insert(test_objects, { safe: true }, function(){
+        that.callback(null, test_db);
+      }); });
+  });
 };
 
-exports.batch = function(batch) {
+test_db.batch = function(batch) {
   return {
     "": {
       topic: function() {
@@ -35,9 +31,9 @@ exports.batch = function(batch) {
         setup_db(this.callback);
       },
       "": batch,
-      teardown: function(test) {
-        if (test.client.isConnected()) {
-          process.nextTick(function(){ test.client.close(); });
+      teardown: function(test_db) {
+        if (test_db.client.isConnected()) {
+          process.nextTick(function(){ test_db.client.close(); });
         };
       }
     }
@@ -73,3 +69,5 @@ function drop_collections(cb){
     }
   });
 }
+
+module.exports = test_db;

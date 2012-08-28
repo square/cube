@@ -1,12 +1,9 @@
-var mongodb = require("mongodb"),
-    assert  = require("assert"),
-    util    = require("util"),
-    metalog = require("../lib/cube/metalog"),
-    test_db = require("./test_db"),
-    http    = require("http");
+var assert      = require("assert"),
+    http        = require("http"),
+    metalog     = require("../lib/cube/metalog"),
+    test_db     = require("./test_db");
 
-exports.port = 1083;
-
+exports.port  = 1083;
 exports.batch = test_db.batch;
 
 exports.request = function(options, data) {
