@@ -9,7 +9,8 @@ var port = ++test.port, server = cube.server({
   "mongo-host": "localhost",
   "mongo-port": 27017,
   "mongo-database": "cube_test",
-  "http-port": port
+  "http-port": port,
+  "authenticator": "allow_all"
 });
 
 server.register = cube.collector.register;

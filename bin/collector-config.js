@@ -6,5 +6,6 @@ module.exports = {
   "mongo-username": null,
   "mongo-password": null,
   "http-port": 1080,
-  "udp-port": 1180
+  "udp-port": 1180,
+  "authenticator": "allow_all"
 };
