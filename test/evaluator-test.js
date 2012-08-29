@@ -5,26 +5,19 @@ var vows        = require("vows"),
 
 var suite = vows.describe("evaluator");
 
-var port = ++test_helper.port, server = cube.server({
-  "mongo-host": "localhost",
-  "mongo-port": 27017,
-  "mongo-database": "cube_test",
-  "http-port": port,
-  "authenticator": "allow_all"
-});
-
-server.register = function(db, endpoints) {
-  cube.evaluator.register(db, endpoints);
-  cube.visualizer.register(db, endpoints);
+var server_options = { 'http-port': test_helper.get_port() }
+function frontend_components() {
+  cube.evaluator.register.apply(this, arguments);
+  cube.visualizer.register.apply(this, arguments);
 };
 
-server.start();
-
-// suite.addBatch(test_helper.batch({
-//   "GET /1.0/event": {
-//     topic: test_helper.request({method: "GET", port: port, path: "/1.0/event"}),
-//     "responds with status 200": function(response) {
-//       assert.equal(response.statusCode, 200);
+// suite.addBatch(
+//   test_helper.with_server(server_options, frontend_components, {
+// 
+//   "POST /event/put with invalid JSON": {
+//     topic: test_helper.request({method: "POST", path: "/1.0/event/put"}, "This ain't JSON.\n"),
+//     "responds with status 400": function(response) {
+//       assert.equal(response.statusCode, 400);
 //       assert.deepEqual(JSON.parse(response.body), {error: "SyntaxError: Unexpected token T"});
 //     }
 //   }

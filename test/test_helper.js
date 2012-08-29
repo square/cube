@@ -1,5 +1,6 @@
 var assert      = require("assert"),
     http        = require("http"),
+    dgram       = require('dgram'),
     mongodb     = require("mongodb"),
     metalog     = require("../lib/cube/metalog");
 
@@ -19,12 +20,13 @@ test_helper.settings = {
   "mongo-username": null,
   "mongo-password": null,
   "mongo-database": "cube_test",
+  "host":           "localhost",
   "authenticator":  "allow_all"
 }
 
 // Disable logging for tests.
-metalog.loggers.info  = metalog.silent;
-metalog.loggers.minor = metalog.silent;
+metalog.loggers.info  = metalog.silent; // log
+metalog.loggers.minor = metalog.silent; // log
 metalog.send_events = false;
 
 // ==========================================================================
@@ -54,7 +56,7 @@ test_helper.request = function(options, data) {
       response.body = "";
       response.setEncoding("utf8");
       response.on("data", function(chunk) { response.body += chunk; });
-      response.on("end", function() { cb(null, response); });
+      response.on("end",  function() { cb(null, response); });
     });
 
     request.on("error", function(e) { cb(e, null); });
@@ -63,6 +65,54 @@ test_helper.request = function(options, data) {
     request.end();
   };
 };
+
+// send udp packet, twiddle thumbs briefly, resume tests.
+test_helper.udp_request = function (data){
+  return function(){
+    var udp_client = dgram.createSocket('udp4');
+    var buffer     = new Buffer(JSON.stringify(data));
+    var context    = this;
+    metalog.info('sending_udp', {  data: data });
+    udp_client.send(buffer, 0, buffer.length, context.udp_port, 'localhost',
+        function(err, val){ delayed_callback(context)(err, val); udp_client.close(); } );
+  };
+}
+
+// proxies to the test context's callback after a short delay.
+//
+// @example as a test topic; will get the same data the cb otherwise would have:
+//   { topic: send_some_data,
+//     'a short time later': {
+//       topic: test_helper.delaying_topic,
+//       'is party time': function(arg){ assert.isAwesome(...) } } }
+//
+function delaying_topic(){
+  var args = Array.prototype.slice.apply(arguments);
+  args.unshift(null);
+  delayed_callback(this).apply(this, args);
+}
+test_helper.delaying_topic = delaying_topic;
+
+// returns a callback that once triggered, delays briefly, then passes the same
+// args to the actual context's callback
+//
+// @example
+//    // you
+//    dcb = delayed_callback(this)
+//    foo.do_something('...', dcb);
+//    // foo, after do_something'ing, invokes the delayed callback
+//    dcb(null, 1, 2);
+//    // 50ms later, dcb does the equivalent of
+//    this.callback(null, 1, 2);
+//
+function delayed_callback(context){
+  return function(){
+    var callback_delay = 100;
+    args = arguments;
+    setTimeout(function(){ context.callback.apply(context, args) }, callback_delay)
+  };
+}
+test_helper.delayed_callback = delayed_callback;
 
 // test_helper.with_server --
 //   start server, run tests once server starts, stop server when tests are done
@@ -75,7 +125,7 @@ test_helper.request = function(options, data) {
 // @param batch      -- the tests to run
 test_helper.with_server = function(options, components, batch){
   return { '': {
-    topic:    function(){ start_server(options, components, this); },
+    topic:    function(){ start_server(options, components, this);  },
     '':       batch,
     teardown: function(svr){ this.server.stop(this.callback); }
   } }
@@ -122,14 +172,14 @@ test_helper.batch = function(batch) {
 // test_db.using_objects -- scaffold fixtures into the database, run tests once loaded.
 //
 // Wrap your tests in test_helper.batch to get the test_db object.
-test_db.using_objects = function (clxn_name, test_objects, that){
+test_db.using_objects = function (clxn_name, test_objects, context){
   metalog.minor('cube_testdb', {state: 'loading test objects', test_objects: test_objects });
   test_db.db.collection(clxn_name, function(err, clxn){
     if (err) throw(err);
-    that[clxn_name] = clxn;
+    context[clxn_name] = clxn;
     clxn.remove({ dummy: true }, {safe: true}, function(){
       clxn.insert(test_objects, { safe: true }, function(){
-        that.callback(null, test_db);
+        context.callback(null, test_db);
       }); });
   });
 };
