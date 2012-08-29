@@ -19,6 +19,7 @@
     "bcrypt":           "0.7.1"
   },
   "scripts": {
-    "preinstall": "npm install mongodb --mongodb:native"
+    "preinstall": "npm install mongodb --mongodb:native",
+    "test": "vows --spec"
   }
 }
