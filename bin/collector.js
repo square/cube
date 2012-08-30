@@ -1,4 +1,4 @@
-var options = require("./collector-config"),
+var options = require("../config/cube").include("collector"),
     cube = require("../"),
     server = cube.server(options);
 

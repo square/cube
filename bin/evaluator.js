@@ -1,4 +1,4 @@
-var options = require("./evaluator-config"),
+var options = require("../config/cube").include('evaluator'),
     cube = require("../"),
     server = cube.server(options);
 
