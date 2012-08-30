@@ -10,6 +10,7 @@ configs.common = {
   "mongo-database": "dashpot_development",
   "mongo-username": null,
   "mongo-password": null,
+  "mongo-server_options": {auto_reconnect: true, poolSize: 8, socketOptions: { noDelay: true }},
   
   "mongo-metrics":  {capped: true, size: 1e7, autoIndexId: true},
   "mongo-events":   {capped: true, size: 1e7, autoIndexId: true},
