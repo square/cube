@@ -14,6 +14,11 @@ configs.common = {
   
   "mongo-metrics":  {capped: true, size: 1e7, autoIndexId: true},
   "mongo-events":   {capped: true, size: 1e7, autoIndexId: true},
+  
+  "horizons": {
+    "calculation":          1000 * 60 * 60 * 2, // 2 hours
+    "invalidation":         1000 * 60 * 60 * 1, // 1 hour
+  }
 };
 
 
