@@ -40,6 +40,15 @@ configs.evaluator = {
   "authenticator":  "mongo_cookie"
 }
 
+
+//
+// Warmer configuration
+//
+configs.warmer = {
+  "warmer-interval": 1000 * 30,
+  "warmer-tier":     1000 * 10
+}
+
 var options = {};
 Object.defineProperty(options, "include", {
     enumerable: false,
