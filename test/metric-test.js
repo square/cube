@@ -15,19 +15,7 @@ var step_testing_delay  = 250,
 var suite = vows.describe("metric");
 
 var nowish = Date.now(), nowish10 = (10e3 * Math.floor(nowish/10e3));
-var steps = {
-  10e3:    function(date, n) { return new Date((Math.floor(date / units.second10) + n) * units.second10); },
-  60e3:    function(date, n) { return new Date((Math.floor(date / units.minute)   + n) * units.minute); },
-  300e3:   function(date, n) { return new Date((Math.floor(date / units.minute5)  + n) * units.minute5); },
-  3600e3:  function(date, n) { return new Date((Math.floor(date / units.hour)     + n) * units.hour); },
-  86400e3: function(date, n) { return new Date((Math.floor(date / units.day)      + n) * units.day); }
-};
-
-steps[units.second10].description = "10-second";
-steps[units.minute  ].description = "1-minute";
-steps[units.minute5 ].description = "5-minute";
-steps[units.hour    ].description = "1-hour";
-steps[units.day     ].description = "1-day";
+var invalid_expression_error = { error: { message: 'Expected "(", "-", "distinct", "max", "median", "min", "sum" or number but "D" found.', column: 1, line: 1,  name: 'SyntaxError' }};
 
 function gen_request(attrs){
   var req = { start: nowish, stop: nowish, step: units.second10, expression: 'sum(test)'};
@@ -50,17 +38,17 @@ suite.addBatch(test_helper.batch({
   'invalid start': assert_invalid_request({start: 'THEN'}, {error: "invalid start"}),
   'invalid stop':  assert_invalid_request({stop:  'NOW'},  {error: "invalid stop"}),
   'invalid step':  assert_invalid_request({step:  'LEFT'}, {error: "invalid step"}),
-  'invalid expression': assert_invalid_request({expression: 'DANCE'}, {error: "invalid expression"}),
+  'invalid expression': assert_invalid_request({expression: 'DANCE'}, invalid_expression_error),
 
   'with request id' : {
     topic:   function(getter){ this.ret = getter(gen_request({id: 'joe', expression: 'sum(test(1))'}), this.callback); },
     'fires callback with id': function(result, j_){
       assert.equal(result.id, 'joe');
       assert.equal(result.value, (result.time > nowish10 ? undefined : 0));
-      assert.include([nowish10, 10000+nowish10], +result.time);
+      assert.include([nowish10, 10e3+nowish10], +result.time);
     }
   }
-
+ 
 })).addBatch(test_helper.batch({
   topic: function(test_db) {
     return metric.getter(test_db.db);
@@ -70,11 +58,25 @@ suite.addBatch(test_helper.batch({
     'fires callback with no id': function(result, j_){
       assert.isFalse("id" in result);
       assert.equal(result.value, (result.time > nowish10 ? undefined : 0));
-      assert.include([nowish10, 10000+nowish10], +result.time);
+      assert.include([nowish10, 10e3+nowish10], +result.time);
     }
   }
-
 }));
+
+function skip(){ // FIXME: remove ------------------------------------------------------------
+  
+var steps = {
+  10e3:    function(date, n) { return new Date((Math.floor(date / units.second10) + n) * units.second10); },
+  60e3:    function(date, n) { return new Date((Math.floor(date / units.minute)   + n) * units.minute); },
+  300e3:   function(date, n) { return new Date((Math.floor(date / units.minute5)  + n) * units.minute5); },
+  3600e3:  function(date, n) { return new Date((Math.floor(date / units.hour)     + n) * units.hour); },
+  86400e3: function(date, n) { return new Date((Math.floor(date / units.day)      + n) * units.day); }
+};
+steps[units.second10].description = "10-second";
+steps[units.minute  ].description = "1-minute";
+steps[units.minute5 ].description = "5-minute";
+steps[units.hour    ].description = "1-hour";
+steps[units.day     ].description = "1-day";
 
 suite.addBatch(test_helper.batch({
   topic: function(test_db) {
@@ -306,4 +308,7 @@ function metricTest(request, expected) {
   } // subtree
 } // tree
 
+};
+skip();
+  
 suite.export(module);
