@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var vows        = require("vows"),
     assert      = require("assert"),
@@ -30,8 +30,8 @@ steps[units.hour    ].description = "1-hour";
 steps[units.day     ].description = "1-day";
 
 function gen_request(attrs){
-  var req = { start: nowish, stop: nowish, step: units.second10, expression: 'sum(test)'}
-  for (var key in attrs){ req[key] = attrs[key]; };
+  var req = { start: nowish, stop: nowish, step: units.second10, expression: 'sum(test)'};
+  for (var key in attrs){ req[key] = attrs[key]; }
   return req;
 }
 
@@ -39,7 +39,7 @@ function assert_invalid_request(req, expected_err) {
   return {
     topic:   function(getter){ this.ret = getter(gen_request(req), this.callback); },
     'fails':      function(err, val){ assert.deepEqual(err, expected_err); },
-    'returns -1': function(err, val){ assert.equal(this.ret, -1) }
+    'returns -1': function(err, val){ assert.equal(this.ret, -1); }
   };
 }
 
@@ -59,7 +59,8 @@ suite.addBatch(test_helper.batch({
       assert.equal(result.value, (result.time > nowish10 ? undefined : 0));
       assert.include([nowish10, 10000+nowish10], +result.time);
     }
-  },
+  }
+
 })).addBatch(test_helper.batch({
   topic: function(test_db) {
     return metric.getter(test_db.db);
@@ -97,7 +98,7 @@ suite.addBatch(test_helper.batch({
   "unary expression": metricTest({
     expression: "sum(test)",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     60e3:    [0, 0, 0, 1, 1, 3, 5, 7, 9, 11, 13, 15, 17, 39, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 69, 71, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93, 95, 97, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     300e3:   [0, 17, 65, 143, 175, 225, 275, 325, 375, 425, 475, 0, 0],
@@ -128,7 +129,7 @@ suite.addBatch(test_helper.batch({
   "compound expression (sometimes fails due to race condition?)": metricTest({
     expression: "max(test(i)) - min(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     300e3:   [NaN, 16, 64, 142, 174, 224, 274, 324, 374, 424, 474, NaN, NaN],
     3600e3:  [81, 2417],
@@ -138,7 +139,7 @@ suite.addBatch(test_helper.batch({
   "non-pyramidal expression": metricTest({
     expression: "distinct(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     300e3:   [0, 17, 65, 143, 175, 225, 275, 325, 375, 425, 475, 0, 0],
     3600e3:  [82, 2418],
@@ -148,7 +149,7 @@ suite.addBatch(test_helper.batch({
   "compound pyramidal and non-pyramidal expression": metricTest({
     expression: "sum(test(i)) - median(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     300e3:   [NaN, 128, 3136, 21726, 54288, 114688, 208788, 344088, 528088, 768288, 1072188, NaN, NaN],
     3600e3:  [3280.5, 3119138.5],
@@ -158,7 +159,7 @@ suite.addBatch(test_helper.batch({
   "compound with constant expression": metricTest({
     expression: "-1 + sum(test)",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     300e3:   [-1, 16, 64, 142, 174, 224, 274, 324, 374, 424, 474, -1, -1],
     3600e3:  [81, 2417],
@@ -219,9 +220,8 @@ function metricTest(request, expected) {
         stop  = new Date(request.stop);
 
     var subtree = {
-      topic:   get_metrics_with_delay(0),
-      '(cached)': {
-        topic: get_metrics_with_delay(1), }
+      topic:      get_metrics_with_delay(0),
+      '(cached)': { topic: get_metrics_with_delay(1) }
     };
     subtree[request.expression] = metrics_assertions();
     subtree["(cached)"][request.expression] = metrics_assertions();
@@ -249,7 +249,7 @@ function metricTest(request, expected) {
           }
         });
       }, depth * step_testing_delay);
-    }};
+    };}
 
     function metrics_assertions(){ return {
       'rounds down the start time (inclusive)': function(actual) {
@@ -302,7 +302,7 @@ function metricTest(request, expected) {
         });
       }
 
-    }}; // metric assertions
+    };} // metric assertions
   } // subtree
 } // tree
 

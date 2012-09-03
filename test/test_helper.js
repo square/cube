@@ -11,7 +11,7 @@ var assert      = require("assert"),
 // setup
 //
 
-var test_helper = {}
+var test_helper = {};
 var test_db     = {};
 var test_collections   = ["test_users", "test_events", "test_metrics"];
 test_helper.inspectify = metalog.inspectify;
@@ -24,7 +24,7 @@ test_helper.settings = {
   "mongo-database": "cube_test",
   "host":           "localhost",
   "authenticator":  "allow_all"
-}
+};
 
 // Disable logging for tests.
 metalog.loggers.info  = metalog.silent; // log
@@ -52,7 +52,7 @@ test_helper.request = function(options, data) {
     var cb = this.callback;
 
     options.host = "localhost";
-    if (! options.port){ options.port = this.http_port };
+    if (! options.port){ options.port = this.http_port; }
 
     var request = http.request(options, function(response) {
       response.body = "";
@@ -78,7 +78,7 @@ test_helper.udp_request = function (data){
     udp_client.send(buffer, 0, buffer.length, context.udp_port, 'localhost',
         function(err, val){ delayed_callback(context)(err, val); udp_client.close(); } );
   };
-}
+};
 
 // proxies to the test context's callback after a short delay.
 //
@@ -111,7 +111,7 @@ function delayed_callback(context){
   return function(){
     var callback_delay = 100;
     var args = arguments;
-    setTimeout(function(){ context.callback.apply(context, args) }, callback_delay)
+    setTimeout(function(){ context.callback.apply(context, args); }, callback_delay);
   };
 }
 test_helper.delayed_callback = delayed_callback;
@@ -130,8 +130,8 @@ test_helper.with_server = function(options, components, batch){
     topic:    function(){ start_server(options, components, this);  },
     '':       batch,
     teardown: function(svr){ this.server.stop(this.callback); }
-  } }
-}
+  } };
+};
 
 // @see test_helper.with_server
 function start_server(options, register, vow){
@@ -165,7 +165,7 @@ test_helper.batch = function(batch) {
       teardown: function(test_db) {
         if (test_db.client.isConnected()) {
           process.nextTick(function(){ test_db.client.close(); });
-        };
+        }
       }
     }
   };

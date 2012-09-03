@@ -7,11 +7,11 @@ var vows        = require("vows"),
 
 var suite = vows.describe("evaluator");
 
-var server_options = { 'http-port': test_helper.get_port() }
+var server_options = { 'http-port': test_helper.get_port() };
 function frontend_components() {
   cube.evaluator.register.apply(this, arguments);
   cube.visualizer.register.apply(this, arguments);
-};
+}
 
 // suite.addBatch(
 //   test_helper.with_server(server_options, frontend_components, {

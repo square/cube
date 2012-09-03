@@ -46,11 +46,11 @@ var dummy_token = "token_in_cookie";
 
 function dummy_request(username, token){
   return({ headers: { cookie: authentication.gen_cookie("_cube_session", username+"_tok", token || dummy_token) } });
-};
+}
 
 suite.addBatch(test_helper.batch({
   mongo_cookie: {
-    topic: function(test_db){ test_db.using_objects("test_users", test_users, this) },
+    topic: function(test_db){ test_db.using_objects("test_users", test_users, this); },
     "": {
       topic: function(test_db){
         return authentication.authenticator("mongo_cookie", test_db.db, { collection: "test_users" }); },
@@ -79,7 +79,7 @@ suite.addBatch(test_helper.batch({
           },
           'is returned as callback param': function(result){
             assert.deepEqual(result, { uid: 'boss_hogg_tok', admin: true });
-          },
+          }
         },
         "user with write access": {
           topic: successful_auth(dummy_request("boss_hogg")),

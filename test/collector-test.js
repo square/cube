@@ -7,7 +7,7 @@ var vows        = require("vows"),
 
 var suite = vows.describe("collector");
 
-var server_options = { 'http-port': test_helper.get_port() }
+var server_options = { 'http-port': test_helper.get_port() };
 
 suite.addBatch(
   test_helper.with_server(server_options, cube.collector.register, {

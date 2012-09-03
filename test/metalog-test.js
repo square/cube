@@ -28,7 +28,7 @@ suite.with_log = function(batch){
     }
   });
   return suite;
-}
+};
 
 suite.with_log({
   '.info': {
@@ -103,7 +103,7 @@ suite.with_log({
   }
 });
 
-function dummy_logger(arg){};
+function dummy_logger(arg){}
 
 suite.addBatch({
   'metalog':{
