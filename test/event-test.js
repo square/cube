@@ -18,12 +18,12 @@ suite.addBatch(test_helper.batch({
   'invalidates': {
     topic: function(putter){
       var ctxt = this;
-      putter((new Event('test2', ice_cubes_good_day, {value: 3})).to_request(), function(){
-        putter((new Event('test2', fuck_wit_dre_day, {value: 3})).to_request(), ctxt.callback);});
+      putter((new Event('test', ice_cubes_good_day, {value: 3})).to_request(), function(){
+        putter((new Event('test', fuck_wit_dre_day, {value: 3})).to_request(), ctxt.callback);});
     },
     'heckya': function(){
       var ts = event.invalidator().tsets();
-      assert.deepEqual(ts, { 'test2': {
+      assert.deepEqual(ts, { 'test': {
         10e3:    [new Date('1992-02-20T01:08:00Z'), new Date('1993-03-18T08:44:50Z') ],
         60e3:    [new Date('1992-02-20T01:08:00Z'), new Date('1993-03-18T08:44:00Z') ],
         300e3:   [new Date('1992-02-20T01:05:00Z'), new Date('1993-03-18T08:40:00Z') ],

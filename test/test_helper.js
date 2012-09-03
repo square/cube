@@ -200,7 +200,7 @@ function setup_db(cb){
 function connect(options){
   metalog.minor('cube_testdb', { state: 'connecting to db', options: options });
   test_db.options = options;
-  test_db.client  = new mongodb.Server(options["mongo-host"], options["mongo-port"], {auto_reconnect: true});
+  test_db.client  = new mongodb.Server(options["mongo-host"], options["mongo-port"], {auto_reconnect: false});
   test_db.db      = new mongodb.Db(options["mongo-database"], test_db.client, {});
 }
 
