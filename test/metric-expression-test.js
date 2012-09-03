@@ -1,3 +1,5 @@
+'use strict';
+
 var vows        = require("vows"),
     assert      = require("assert"),
     parser      = require("../lib/cube/metric-expression");

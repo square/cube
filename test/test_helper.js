@@ -1,3 +1,5 @@
+'use strict';
+
 var assert      = require("assert"),
     http        = require("http"),
     dgram       = require('dgram'),
@@ -108,7 +110,7 @@ test_helper.delaying_topic = delaying_topic;
 function delayed_callback(context){
   return function(){
     var callback_delay = 100;
-    args = arguments;
+    var args = arguments;
     setTimeout(function(){ context.callback.apply(context, args) }, callback_delay)
   };
 }

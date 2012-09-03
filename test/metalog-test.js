@@ -1,3 +1,5 @@
+'use strict';
+
 var vows        = require("vows"),
     assert      = require("assert"),
     test_helper = require('./test_helper');
@@ -56,7 +58,7 @@ suite.with_log({
         assert.equal(this.logged.infoed.pop(), 'reactor_level\t{"criticality":9,"hemiconducers":"relucting"}');
       },
       'writes an event to cube itself': function(metalog){
-        event = this.logged.putted.pop();
+        var event = this.logged.putted.pop();
         event.time = 'whatever';
         assert.deepEqual(event, {
           data: { hemiconducers: 'relucting', criticality: 9 },

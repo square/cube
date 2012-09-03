@@ -1,3 +1,5 @@
+'use strict';
+
 var options = require("../config/cube").include('evaluator'),
     cube = require("../"),
     server = cube.server(options);

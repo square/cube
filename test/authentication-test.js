@@ -1,3 +1,5 @@
+'use strict';
+
 var vows        = require("vows"),
     assert      = require("assert"),
     test_helper = require('./test_helper'),
