@@ -37,7 +37,8 @@ configs.collector = {
 //
 configs.evaluator = {
   "http-port": 1081,
-  "authenticator":  "mongo_cookie"
+  // "authenticator":  "mongo_cookie"
+  "authenticator": "allow_all"
 }
 
 

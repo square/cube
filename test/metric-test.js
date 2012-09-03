@@ -29,6 +29,52 @@ steps[units.minute5 ].description = "5-minute";
 steps[units.hour    ].description = "1-hour";
 steps[units.day     ].description = "1-day";
 
+function gen_request(attrs){
+  var req = { start: nowish, stop: nowish, step: units.second10, expression: 'sum(test)'}
+  for (var key in attrs){ req[key] = attrs[key]; };
+  return req;
+}
+
+function assert_invalid_request(req, expected_err) {
+  return {
+    topic:   function(getter){ this.ret = getter(gen_request(req), this.callback); },
+    'fails':      function(err, _){ assert.deepEqual(err, expected_err); },
+    'returns -1': function(err, _){ assert.equal(this.ret, -1) }
+  };
+}
+
+suite.addBatch(test_helper.batch({
+  topic: function(test_db) {
+    return metric.getter(test_db.db);
+  },
+  'invalid start': assert_invalid_request({start: 'THEN'}, {error: "invalid start"}),
+  'invalid stop':  assert_invalid_request({stop:  'NOW'},  {error: "invalid stop"}),
+  'invalid step':  assert_invalid_request({step:  'LEFT'}, {error: "invalid step"}),
+  'invalid expression': assert_invalid_request({expression: 'DANCE'}, {error: "invalid expression"}),
+
+  'with request id' : {
+    topic:   function(getter){ this.ret = getter(gen_request({id: 'joe', expression: 'sum(test(1))'}), this.callback); },
+    'fires callback with id': function w_req_vow(result, _){
+      assert.equal(result.id, 'joe');
+      assert.equal(result.value, (result.time > nowish10 ? undefined : 0));
+      assert.include([nowish10, 10000+nowish10], +result.time);
+    }
+  },
+})).addBatch(test_helper.batch({
+  topic: function(test_db) {
+    return metric.getter(test_db.db);
+  },
+  'no request id' : {
+    topic:   function(getter){ this.ret = getter(gen_request({}), this.callback); },
+    'fires callback with no id': function no_req_vow(result, _){
+      assert.isFalse("id" in result);
+      assert.equal(result.value, (result.time > nowish10 ? undefined : 0));
+      assert.include([nowish10, 10000+nowish10], +result.time);
+    }
+  }
+
+}));
+
 suite.addBatch(test_helper.batch({
   topic: function(test_db) {
     var putter = event.putter(test_db.db),
@@ -170,7 +216,7 @@ function metricTest(request, expected) {
   //
   function testStep(step, expected) {
     var start = new Date(request.start),
-    stop  = new Date(request.stop);
+        stop  = new Date(request.stop);
 
     var subtree = {
       topic:   get_metrics_with_delay(0),
@@ -183,10 +229,10 @@ function metricTest(request, expected) {
 
     function get_metrics_with_delay(depth){ return function(){
       var actual   = [],
-      timeout  = setTimeout(function() { cb("Time's up!"); }, 10000),
-      cb       = this.callback,
-      req      = Object.create(request),
-      getter   = arguments[depth];
+          timeout  = setTimeout(function() { cb("Time's up!"); }, 10000),
+          cb       = this.callback,
+          req      = Object.create(request),
+          getter   = arguments[depth];
       req.step = step;
       // Wait long enough for the events to have settled in the db.  The
       // non-cached (depth=0) round can all start in parallel, making this an
