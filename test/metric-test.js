@@ -38,8 +38,8 @@ function gen_request(attrs){
 function assert_invalid_request(req, expected_err) {
   return {
     topic:   function(getter){ this.ret = getter(gen_request(req), this.callback); },
-    'fails':      function(err, _){ assert.deepEqual(err, expected_err); },
-    'returns -1': function(err, _){ assert.equal(this.ret, -1) }
+    'fails':      function(err, val){ assert.deepEqual(err, expected_err); },
+    'returns -1': function(err, val){ assert.equal(this.ret, -1) }
   };
 }
 
@@ -54,7 +54,7 @@ suite.addBatch(test_helper.batch({
 
   'with request id' : {
     topic:   function(getter){ this.ret = getter(gen_request({id: 'joe', expression: 'sum(test(1))'}), this.callback); },
-    'fires callback with id': function w_req_vow(result, _){
+    'fires callback with id': function(result, j_){
       assert.equal(result.id, 'joe');
       assert.equal(result.value, (result.time > nowish10 ? undefined : 0));
       assert.include([nowish10, 10000+nowish10], +result.time);
@@ -66,7 +66,7 @@ suite.addBatch(test_helper.batch({
   },
   'no request id' : {
     topic:   function(getter){ this.ret = getter(gen_request({}), this.callback); },
-    'fires callback with no id': function no_req_vow(result, _){
+    'fires callback with no id': function(result, j_){
       assert.isFalse("id" in result);
       assert.equal(result.value, (result.time > nowish10 ? undefined : 0));
       assert.include([nowish10, 10000+nowish10], +result.time);
@@ -179,13 +179,13 @@ suite.addBatch(test_helper.batch({
 //          topic:       function get_metrics_with_delay(getter){},
 //          'sum(test)': function metrics_assertions(actual){},
 //          '(cached)': {
-//            topic:       function get_metrics_with_delay(_, getter){},
+//            topic:       function get_metrics_with_delay(err, getter){},
 //            'sum(test)': function metrics_assertions(actual){} } },
 //        'at 1-day intervals': {
 //          topic:       function get_metrics_with_delay(getter){},
 //          'sum(test)': function metrics_assertions(actual){},
 //          '(cached)': {
-//            topic:       function get_metrics_with_delay(_, getter){},
+//            topic:       function get_metrics_with_delay(err, getter){},
 //            'sum(test)': function metrics_assertions(actual){} } }
 //      }
 //    }
