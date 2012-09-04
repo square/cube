@@ -340,4 +340,4 @@ function utc(year, month, day, hours, minutes, seconds) {
   return new Date(Date.UTC(year, month, day, hours || 0, minutes || 0, seconds || 0));
 }
 
-suite.export(module);
+suite['export'](module);

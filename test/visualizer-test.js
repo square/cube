@@ -25,4 +25,4 @@ function frontend_components() {
 //   }
 // }));
 
-suite.export(module);
+suite['export'](module);

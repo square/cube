@@ -36,4 +36,4 @@ suite.addBatch(test_helper.batch({
   }
 }));
 
-suite.export(module);
+suite['export'](module);

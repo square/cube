@@ -1,5 +1,7 @@
-var configs = {};
+var configs = {},
+    metalog = require('../lib/cube/metalog');
 
+metalog.send_events = false;
 
 //
 //Shared configuration
