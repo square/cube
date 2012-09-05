@@ -73,16 +73,16 @@ test_helper.udp_request = function (data){
   return function(){
     var udp_client = dgram.createSocket('udp4');
     var buffer     = new Buffer(JSON.stringify(data));
-    var context    = this;
+    var ctxt       = this;
     metalog.info('sending_udp', {  data: data });
-    udp_client.send(buffer, 0, buffer.length, context.udp_port, 'localhost',
-        function(err, val){ delayed_callback(context)(err, val); udp_client.close(); } );
+    udp_client.send(buffer, 0, buffer.length, ctxt.udp_port, 'localhost',
+        function(err, val){ delay(ctxt.callback, ctxt)(err, val); udp_client.close(); } );
   };
 };
 
 // proxies to the test context's callback after a short delay.
 //
-// @example as a test topic; will get the same data the cb otherwise would have:
+// @example the test topic introduces a delay; the 'is party time' vow gets the same data the cb otherwise would have:
 //   { topic: send_some_data,
 //     'a short time later': {
 //       topic: test_helper.delaying_topic,
@@ -91,7 +91,7 @@ test_helper.udp_request = function (data){
 function delaying_topic(){
   var args = Array.prototype.slice.apply(arguments);
   args.unshift(null);
-  delayed_callback(this).apply(this, args);
+  delay(this.callback, this).apply(this, args);
 }
 test_helper.delaying_topic = delaying_topic;
 
@@ -100,21 +100,22 @@ test_helper.delaying_topic = delaying_topic;
 //
 // @example
 //    // you
-//    dcb = delayed_callback(this)
+//    dcb = delay(this)
 //    foo.do_something('...', dcb);
 //    // foo, after do_something'ing, invokes the delayed callback
 //    dcb(null, 1, 2);
 //    // 50ms later, dcb does the equivalent of
 //    this.callback(null, 1, 2);
 //
-function delayed_callback(context){
+function delay(orig_cb, ctxt, ms){
+  ctxt = ctxt || null;
+  ms   = ms   || 100;
   return function(){
-    var callback_delay = 100;
     var args = arguments;
-    setTimeout(function(){ context.callback.apply(context, args); }, callback_delay);
+    setTimeout(function(){ orig_cb.apply(ctxt, args); }, ms);
   };
 }
-test_helper.delayed_callback = delayed_callback;
+test_helper.delay = delay;
 
 // test_helper.with_server --
 //   start server, run tests once server starts, stop server when tests are done
