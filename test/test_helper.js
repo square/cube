@@ -3,7 +3,7 @@
 var assert      = require("assert"),
     http        = require("http"),
     dgram       = require('dgram'),
-    mongodb     = require("mongodb"),
+    db          = require("../lib/cube/db"),
     metalog     = require("../lib/cube/metalog");
 
 // ==========================================================================
@@ -29,6 +29,7 @@ test_helper.settings = {
 // Disable logging for tests.
 metalog.loggers.info  = metalog.silent; // log
 metalog.loggers.minor = metalog.silent; // log
+metalog.loggers.warn = metalog.silent; // log
 metalog.send_events = false;
 
 // ==========================================================================
@@ -159,13 +160,15 @@ test_helper.batch = function(batch) {
   return {
     "": {
       topic: function() {
-        connect(test_helper.settings);
-        setup_db(this.callback);
+        var _this = this;
+        connect(test_helper.settings, function(error, db){
+          setup_db(_this.callback);
+        });
       },
       "": batch,
       teardown: function(test_db) {
-        if (test_db.client.isConnected()) {
-          process.nextTick(function(){ test_db.client.close(); });
+        if (test_db.db.isConnected()) {
+          process.nextTick(function(){ test_db.db.close(); });
         }
       }
     }
@@ -180,8 +183,8 @@ test_db.using_objects = function (clxn_name, test_objects, context){
   test_db.db.collection(clxn_name, function(err, clxn){
     if (err) throw(err);
     context[clxn_name] = clxn;
-    clxn.remove({ dummy: true }, {safe: true}, function(){
-      clxn.insert(test_objects, { safe: true }, function(){
+    clxn.remove({ dummy: true }, function(){
+      clxn.insert(test_objects, function(){
         context.callback(null, test_db);
       }); });
   });
@@ -198,27 +201,29 @@ function setup_db(cb){
 }
 
 // @see test_helper.batch
-function connect(options){
+function connect(options, callback){
   metalog.minor('cube_testdb', { state: 'connecting to db', options: options });
-  test_db.options = options;
-  test_db.client  = new mongodb.Server(options["mongo-host"], options["mongo-port"], {auto_reconnect: false});
-  test_db.db      = new mongodb.Db(options["mongo-database"], test_db.client, {});
+  test_db.options = options,
+  test_db.db      = db;
+
+  test_db.db.open(options, callback);
 }
 
 // @see test_helper.batch
 function drop_collections(cb){
   metalog.minor('cube_testdb', { state: 'dropping test collections', collections: test_collections });
-  test_db.db.open(function(error) {
-    var collectionsRemaining = test_collections.length;
-    test_collections.forEach(function(collection_name){
-      test_db.db.dropCollection(collection_name,  collectionReady);
-    });
-    function collectionReady() {
-      if (!--collectionsRemaining) {
-        cb(null, test_db);
-      }
-    }
+
+  var collectionsRemaining = test_collections.length;
+  test_collections.forEach(function(collection_name){
+    test_db.db.collection(collection_name, function(error, collection){
+      collection.drop(collectionReady);
+    })
   });
+  function collectionReady() {
+    if (!--collectionsRemaining) {
+      cb(null, test_db);
+    }
+  }
 }
 
 // ==========================================================================

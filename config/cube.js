@@ -13,14 +13,16 @@ configs.common = {
   "mongo-username": null,
   "mongo-password": null,
   "mongo-server_options": {auto_reconnect: true, poolSize: 8, socketOptions: { noDelay: true }},
-  
+
   "mongo-metrics":  {autoIndexId: true, capped: false            },
   "mongo-events":   {autoIndexId: true, capped: true,  size: 1e9 },
-  
-  // "horizons": {
-  //   "calculation":          1000 * 60 * 60 * 2, // 2 hours
-  //   "invalidation":         1000 * 60 * 60 * 1, // 1 hour
-  // }
+
+  "separate-events-database": true,
+
+  "horizons": {
+    "calculation":          1000 * 60 * 60 * 2, // 2 hours
+    "invalidation":         1000 * 60 * 60 * 1, // 1 hour
+  }
 };
 
 
