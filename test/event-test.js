@@ -21,7 +21,7 @@ suite.addBatch(test_helper.batch({
       putter((new Event('test', ice_cubes_good_day, {value: 3})).to_request(), function(){
         putter((new Event('test', fuck_wit_dre_day, {value: 3})).to_request(), ctxt.callback);});
     },
-    'heckya': function(){
+    'correct tiers': function(){
       var ts = event.invalidator().tsets();
       assert.deepEqual(ts, { 'test': {
         10e3:    [new Date('1992-02-20T01:08:00Z'), new Date('1993-03-18T08:44:50Z') ],

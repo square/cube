@@ -31,6 +31,40 @@ function assert_invalid_request(req, expected_err) {
   };
 }
 
+var thenish = Date.UTC(2011, 6, 18, 0, 0, 0);
+function gen_date(sec){
+  return new Date(thenish + sec*units.second);
+}
+
+var t1 = gen_date(2),
+    t2 = gen_date(71);
+
+suite.addBatch(test_helper.batch({
+  topic: function(test_db) {
+    var putter = event.putter(test_db.db),
+    getter = metric.getter(test_db.db),
+    callback = this.callback;
+
+    // Seed the events table with a simple event: a value going from 0 to 2499
+    for (var i = 0; i < 250; i++) {
+      putter({
+        type: "test",
+        time: gen_date(i * 3).toISOString(),
+        data: {i: 3 * i}
+      });
+    }
+
+    // So the events can settle in, wait `batch_testing_delay` ms before continuing
+    setTimeout(function() { callback(null, getter); }, batch_testing_delay);
+  },
+  'hi': {
+    topic: function(getter){
+      this.ret = getter(gen_request({start: t1, stop: t2, expression: 'sum(test)'}), this.callback); },
+    'fires callback with id': function(result, j_){
+    }
+  }
+}));
+
 suite.addBatch(test_helper.batch({
   topic: function(test_db) {
     return metric.getter(test_db.db);
@@ -48,8 +82,8 @@ suite.addBatch(test_helper.batch({
       assert.include([nowish10, 10e3+nowish10], +result.time);
     }
   }
- 
 })).addBatch(test_helper.batch({
+
   topic: function(test_db) {
     return metric.getter(test_db.db);
   },
@@ -64,7 +98,7 @@ suite.addBatch(test_helper.batch({
 }));
 
 function skip(){ // FIXME: remove ------------------------------------------------------------
-  
+
 var steps = {
   10e3:    function(date, n) { return new Date((Math.floor(date / units.second10) + n) * units.second10); },
   60e3:    function(date, n) { return new Date((Math.floor(date / units.minute)   + n) * units.minute); },
@@ -96,6 +130,36 @@ suite.addBatch(test_helper.batch({
     // So the events can settle in, wait `batch_testing_delay` ms before continuing
     setTimeout(function() { callback(null, getter); }, batch_testing_delay);
   },
+
+  // FIXME: ---- remove below ------------------------------------
+
+  "unary expression a": metricTest({
+    expression: "sum(test)",
+    start:      "2011-07-17T23:47:00.000Z",
+    stop:       "2011-07-18T00:02:00.000Z"
+  }, {
+    60e3:    [ 0,  0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23 ]
+  }),
+
+  "unary expression b": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:47:00.000Z", stop:       "2011-07-18T00:00:00.000Z"}, { 60e3:    [ 0,  0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17             ] }),
+  "unary expression c": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:48:00.000Z", stop:       "2011-07-18T00:01:00.000Z"}, { 60e3:    [     0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39         ] }),
+  "unary expression d": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:49:00.000Z", stop:       "2011-07-18T00:02:00.000Z"}, { 60e3:    [         0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23     ] }),
+  "unary expression e": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:50:00.000Z", stop:       "2011-07-18T00:03:00.000Z"}, { 60e3:    [             1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23, 25 ] }),
+
+  "unary expression f": metricTest({
+    expression: "sum(test)",
+    start:      "2011-07-17T23:57:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
+  }, {
+    60e3:    [13, 15, 17, 39, 23, 25, 27, 29, 31, 33,
+              35, 37, 39, 41, 43, 45, 47, 49, 51, 53,
+              55, 57, 59, 61, 63, 65, 67, 69, 71, 73,
+              75, 77, 79, 81, 83, 85, 87, 89, 91, 93,
+              95, 97, 99,  0,  0,  0,  0,  0,  0,  0,
+              0,  0,  0]
+  }),
+
+  // FIXME: ---- remove above ------------------------------------
 
   "unary expression": metricTest({
     expression: "sum(test)",
@@ -197,7 +261,6 @@ function metricTest(request, expected) {
   // { 'at 1-minute intervals': { }, 'at 1-day intervals': { } }
   var tree = {}, k;
   for (var step in expected) tree["at " + steps[step].description + " intervals"] = testStep(step, expected[step]);
-  return tree;
 
   //
   // {
@@ -227,7 +290,6 @@ function metricTest(request, expected) {
     };
     subtree[request.expression] = metrics_assertions();
     subtree["(cached)"][request.expression] = metrics_assertions();
-    return subtree;
 
     function get_metrics_with_delay(depth){ return function(){
       var actual   = [],
@@ -303,12 +365,15 @@ function metricTest(request, expected) {
           }
         });
       }
-
     };} // metric assertions
+
+    return subtree;
   } // subtree
+  return tree;
 } // tree
 
-};
+}
 skip();
-  
-suite.export(module);
+
+suite['export'](module);
+
