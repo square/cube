@@ -13,15 +13,19 @@ var ice_cubes_good_day = Date.UTC(1992, 1, 20, 1,  8,  7),
 
 suite.addBatch(test_helper.batch({
   topic: function(test_db) {
-    return event.putter(test_db.db);
+    test_helper.inspectify(test_db);
+    return event.putter(test_db);
   },
   'invalidates': {
     topic: function(putter){
       var ctxt = this;
+      test_helper.inspectify('a');
       putter((new Event('test', ice_cubes_good_day, {value: 3})).to_request(), function(){
+        test_helper.inspectify('b');
         putter((new Event('test', fuck_wit_dre_day, {value: 3})).to_request(), ctxt.callback);});
     },
     'correct tiers': function(){
+      test_helper.inspectify('invalidates putter tiers', arguments);
       var ts = event.invalidator().tsets();
       assert.deepEqual(ts, { 'test': {
         10e3:    [new Date('1992-02-20T01:08:00Z'), new Date('1993-03-18T08:44:50Z') ],

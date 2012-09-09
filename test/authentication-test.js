@@ -53,7 +53,7 @@ suite.addBatch(test_helper.batch({
     topic: function(test_db){ test_db.using_objects("test_users", test_users, this); },
     "": {
       topic: function(test_db){
-        return authentication.authenticator("mongo_cookie", test_db.db, { collection: "test_users" }); },
+        return authentication.authenticator("mongo_cookie", test_db, { collection: "test_users" }); },
       "authenticates": {
         "users with good tokens": {
           topic: successful_auth(dummy_request("boss_hogg")),

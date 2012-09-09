@@ -1,9 +1,10 @@
 'use strict';
 
-var assert      = require("assert"),
+var _ = require("underscore"),
+    assert      = require("assert"),
     http        = require("http"),
     dgram       = require('dgram'),
-    db          = require("../lib/cube/db"),
+    test_db     = require("../lib/cube/db"),
     metalog     = require("../lib/cube/metalog");
 
 // ==========================================================================
@@ -12,7 +13,6 @@ var assert      = require("assert"),
 //
 
 var test_helper = {};
-var test_db     = {};
 var test_collections   = ["test_users", "test_events", "test_metrics"];
 test_helper.inspectify = metalog.inspectify;
 
@@ -161,15 +161,13 @@ test_helper.batch = function(batch) {
     "": {
       topic: function() {
         var _this = this;
-        connect(test_helper.settings, function(error, db){
-          setup_db(_this.callback);
+        test_db.open(test_helper.settings, function(error){
+          drop_collections(_this.callback);
         });
       },
       "": batch,
       teardown: function(test_db) {
-        if (test_db.db.isConnected()) {
-          process.nextTick(function(){ test_db.db.close(); });
-        }
+        test_db.close(this.callback);
       }
     }
   };
@@ -180,7 +178,7 @@ test_helper.batch = function(batch) {
 // Wrap your tests in test_helper.batch to get the test_db object.
 test_db.using_objects = function (clxn_name, test_objects, context){
   metalog.minor('cube_testdb', {state: 'loading test objects', test_objects: test_objects });
-  test_db.db.collection(clxn_name, function(err, clxn){
+  test_db.collection(clxn_name, function(err, clxn){
     if (err) throw(err);
     context[clxn_name] = clxn;
     clxn.remove({ dummy: true }, function(){
@@ -196,26 +194,12 @@ test_db.using_objects = function (clxn_name, test_objects, context){
 //
 
 // @see test_helper.batch
-function setup_db(cb){
-  drop_collections(cb);
-}
-
-// @see test_helper.batch
-function connect(options, callback){
-  metalog.minor('cube_testdb', { state: 'connecting to db', options: options });
-  test_db.options = options,
-  test_db.db      = db;
-
-  test_db.db.open(options, callback);
-}
-
-// @see test_helper.batch
 function drop_collections(cb){
   metalog.minor('cube_testdb', { state: 'dropping test collections', collections: test_collections });
 
   var collectionsRemaining = test_collections.length;
   test_collections.forEach(function(collection_name){
-    test_db.db.collection(collection_name, function(error, collection){
+    test_db.collection(collection_name, function(error, collection){
       collection.drop(collectionReady);
     })
   });
@@ -225,6 +209,24 @@ function drop_collections(cb){
     }
   }
 }
+
+// ==========================================================================
+//
+// assertions
+//
+
+assert.isCalledTimes = function(ctxt, reps){
+  var results = [], finished = false;
+  setTimeout(function(){ if (! finished){ ctxt.callback(new Error('timeout: need '+reps+' results only have '+util.inspect(results))); } }, 2000);
+  return function _is_called_checker(){
+    results.push(_.toArray(arguments));
+    if (results.length >= reps){ finished = true; ctxt.callback(null, results); }
+  };
+};
+
+assert.isNotCalled = function(name){
+  return function(){ throw new Error(name + ' should not have been called, but was'); };
+};
 
 // ==========================================================================
 //

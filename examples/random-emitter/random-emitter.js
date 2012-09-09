@@ -23,6 +23,7 @@ while (start < stop) {
   });
   start += step;
   ++count;
+  if (count > 3) break;
 }
 
 util.log("sent " + count + " events");

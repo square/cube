@@ -61,8 +61,8 @@ suite.with_log({
         var event = this.logged.putted.pop();
         event.time = 'whatever';
         assert.deepEqual(event, {
-          data: { hemiconducers: 'relucting', criticality: 9 },
-          type: 'reactor_level',
+          data: { hemiconducers: 'relucting', criticality: 9, at: "reactor_level" },
+          type: 'cube',
           time: 'whatever'
         });
       }

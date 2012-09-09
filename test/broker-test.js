@@ -13,19 +13,6 @@ var suite = vows.describe("broker");
 
 var squarer = function(ii, cb){ cb(null, ii*ii, 'squarer'); };
 
-assert.isCalledTimes = function(ctxt, reps){
-  var results = [], finished = false;
-  setTimeout(function(){ if (! finished){ ctxt.callback(new Error('timeout: need '+reps+' results only have '+util.inspect(results))); } }, 2000);
-  return function _is_called_checker(){
-    results.push(_.toArray(arguments));
-    if (results.length >= reps){ finished = true; ctxt.callback(null, results); }
-  };
-};
-
-assert.isNotCalled = function(name){
-  return function(){ throw new Error(name + ' should not have been called, but was'); };
-};
-
 function example_worker(){ var worker = new Worker('test', 50); worker.start(); return worker; }
 function example_job(){ return (new Job('smurf', squarer, [7])); }
 
