@@ -5,7 +5,7 @@ var _ = require("underscore"),
     assert      = require("assert"),
     http        = require("http"),
     dgram       = require('dgram'),
-    test_db     = require("../lib/cube/db"),
+    Db          = require("../lib/cube/db"),
     metalog     = require("../lib/cube/metalog");
 
 // ==========================================================================
@@ -30,7 +30,6 @@ test_helper.settings = {
 // Disable logging for tests.
 metalog.loggers.info  = metalog.silent; // log
 metalog.loggers.minor = metalog.silent; // log
-metalog.loggers.warn = metalog.silent; // log
 metalog.send_events = false;
 
 // ==========================================================================
@@ -75,10 +74,10 @@ test_helper.udp_request = function (data){
   return function(){
     var udp_client = dgram.createSocket('udp4');
     var buffer     = new Buffer(JSON.stringify(data));
-    var ctxt       = this;
-    metalog.info('sending_udp', {  data: data });
+    var ctxt       = this, cb = ctxt.callback;
+    metalog.info('test_sending_udp', {  data: data });
     udp_client.send(buffer, 0, buffer.length, ctxt.udp_port, 'localhost',
-        function(err, val){ delay(ctxt.callback, ctxt)(err, val); udp_client.close(); } );
+        function(err, val){ delay(cb, ctxt)(err, val); udp_client.close(); } );
   };
 };
 
@@ -129,23 +128,32 @@ test_helper.delay = delay;
 // @param components -- passed to server.register()
 // @param batch      -- the tests to run
 test_helper.with_server = function(options, components, batch){
-  return { '': {
-    topic:    function(){ start_server(options, components, this);  },
+  return test_helper.batch({ '': {
+    topic:    function(test_db){
+      var ctxt = this, cb = ctxt.callback;
+      start_server(options, components, ctxt, test_db);
+    },
     '':       batch,
-    teardown: function(svr){ this.server.stop(this.callback); }
-  } };
+    teardown: function(j_, test_db){
+      var callback = this.callback;
+      this.server.stop(function(){
+        metalog.info('test_server_batch_closed');
+        callback();
+      });
+    }
+  } });
 };
 
 // @see test_helper.with_server
-function start_server(options, register, vow){
+function start_server(options, register, ctxt, test_db){
   for (var key in test_helper.settings){
     if (! options[key]){ options[key] = test_helper.settings[key]; }
   }
-  vow.http_port = options['http-port'];
-  vow.udp_port  = options['udp-port'];
-  vow.server = require('../lib/cube/server')(options);
-  vow.server.register = register;
-  vow.server.start(vow.callback);
+  ctxt.http_port = options['http-port'];
+  ctxt.udp_port  = options['udp-port'];
+  ctxt.server = require('../lib/cube/server')(options, test_db);
+  ctxt.server.register = register;
+  ctxt.server.start(ctxt.callback);
 }
 
 // ==========================================================================
@@ -153,22 +161,32 @@ function start_server(options, register, vow){
 // db helpers
 //
 
+var suite_id = 0;
+
 // test_helper.batch --
 // * connect to db, drop relevant collections
 // * run tests once db is ready;
 // * close db when tests are done
 test_helper.batch = function(batch) {
+  metalog.info('batch', batch);
   return {
     "": {
       topic: function() {
-        var _this = this;
-        test_db.open(test_helper.settings, function(error){
-          drop_collections(_this.callback);
+        metalog.warn('got here');
+        var ctxt = this;
+        ctxt.db = new Db();
+        var options = _.extend({}, test_helper.settings, {collection_prefix: ('ts'+(++suite_id)+'_')});
+        ctxt.db.open(options, function(error){
+          drop_and_reopen_collections(ctxt.db, ctxt.callback);
         });
       },
       "": batch,
-      teardown: function(test_db) {
-        test_db.close(this.callback);
+      teardown: function(){
+        var callback = this.callback;
+        this.db.close(function(){
+          metalog.info('test_db_batch_closed');
+          callback();
+        });
       }
     }
   };
@@ -177,14 +195,15 @@ test_helper.batch = function(batch) {
 // test_db.using_objects -- scaffold fixtures into the database, run tests once loaded.
 //
 // Wrap your tests in test_helper.batch to get the test_db object.
-test_db.using_objects = function (clxn_name, test_objects, context){
-  metalog.minor('cube_testdb', {state: 'loading test objects', test_objects: test_objects });
+Db.prototype.using_objects = function (clxn_name, test_objects, ctxt){
+  var test_db = this;
+  metalog.minor('test_db_loading_objects', test_objects);
   test_db.collection(clxn_name, function(err, clxn){
     if (err) throw(err);
-    context[clxn_name] = clxn;
+    ctxt[clxn_name] = clxn;
     clxn.remove({ dummy: true }, function(){
       clxn.insert(test_objects, function(){
-        context.callback(null, test_db);
+        ctxt.callback(null, test_db);
       }); });
   });
 };
@@ -195,20 +214,20 @@ test_db.using_objects = function (clxn_name, test_objects, context){
 //
 
 // @see test_helper.batch
-function drop_collections(cb){
-  metalog.minor('cube_testdb', { state: 'dropping test collections', collections: test_collections });
+function drop_and_reopen_collections(test_db, cb){
+  metalog.minor('test_db_drop_collections', { collections: test_collections });
 
   var collectionsRemaining = test_collections.length;
-  test_collections.forEach(function(collection_name){
-    test_db.collection(collection_name, function(error, collection){
-      collection.drop(collectionReady);
-    })
-  });
-  function collectionReady() {
-    if (!--collectionsRemaining) {
-      cb(null, test_db);
-    }
-  }
+  // test_collections.forEach(function(collection_name){
+  //   test_db.collection(collection_name, function(error, collection){
+  //     collection.drop(collectionReady);
+  //   })
+  // });
+  // function collectionReady() {
+  //   if (!--collectionsRemaining) {
+      test_db.events('test', function test_helper_go(){ cb(null, test_db); });
+  //   }
+  // }
 }
 
 // ==========================================================================

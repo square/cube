@@ -84,23 +84,23 @@ suite.with_log({
       }
     }
   }
-}).with_log({
-  '.event': {
-    'last parameter overrides log target': {
-      topic: function(metalog) {
-        metalog.send_events = true;
-        metalog.event('reactor_level', { criticality: 3, hemiconducers: 'cromulent' }, 'minor');
-        metalog.event('reactor_level', { criticality: 2, hemiconducers: 'whispery'  }, 'silent');
-        return metalog;
-      },
-      '': function(metalog){
-        assert.equal(this.logged.minored.pop(), 'reactor_level\t{"criticality":3,"hemiconducers":"cromulent"}');
-        assert.equal(this.logged.putted.pop().data.criticality, 2);
-        assert.equal(this.logged.putted.pop().data.criticality, 3);
-        assert.deepEqual(this.logged, { infoed: [], minored: [], putted: [] });
-      }
-    }
-  }
+// }).with_log({
+//   '.event': {
+//     'last parameter overrides log target': {
+//       topic: function(metalog) {
+//         metalog.send_events = true;
+//         metalog.event('reactor_level', { criticality: 3, hemiconducers: 'cromulent' }, 'minor');
+//         metalog.event('reactor_level', { criticality: 2, hemiconducers: 'whispery'  }, 'silent');
+//         return metalog;
+//       },
+//       '': function(metalog){
+//         assert.equal(this.logged.minored.pop(), 'reactor_level\t{"criticality":3,"hemiconducers":"cromulent"}');
+//         assert.equal(this.logged.putted.pop().data.criticality, 2);
+//         assert.equal(this.logged.putted.pop().data.criticality, 3);
+//         assert.deepEqual(this.logged, { infoed: [], minored: [], putted: [] });
+//       }
+//     }
+//   }
 });
 
 function dummy_logger(arg){}

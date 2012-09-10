@@ -133,6 +133,7 @@ suite.addBatch(test_helper.batch({
         getter    = metric.getter(test_db),
         callback  = this.callback,
     	put_queue = queuer(10);
+    this.putter = putter;
 
     // Seed the events table with a simple event: a value going from 0 to 2499
     for (var i = 0; i < 2500; i++){
@@ -159,6 +160,7 @@ suite.addBatch(test_helper.batch({
     // // So the events can settle in, wait `batch_testing_delay` ms before continuing
     // setTimeout(function() { callback(null, getter); }, batch_testing_delay);
   },
+  teardown: function(){ this.putter.stop(this.callback); },
 
   // FIXME: ---- remove below ------------------------------------
 
