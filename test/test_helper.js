@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require("underscore"),
+    util        = require("util"),
     assert      = require("assert"),
     http        = require("http"),
     dgram       = require('dgram'),
