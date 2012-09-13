@@ -16,10 +16,10 @@ suite.addBatch(test_helper.batch({
     return this.putter = event.putter(test_db);
   },
   'invalidates': {
-    topic: function(){
-      var ctxt = this;
-      ctxt.putter((new Event('test', ice_cubes_good_day, {value: 3})).to_request(), function(){
-        ctxt.putter((new Event('test', fuck_wit_dre_day, {value: 3})).to_request(), ctxt.callback);});
+    topic: function(putter){
+      var _this = this;
+      putter((new Event('test', ice_cubes_good_day, {value: 3})).to_request(), function(){
+        putter((new Event('test', fuck_wit_dre_day, {value: 3})).to_request(), _this.callback);});
     },
     'correct tiers': function(a,b){
       var ts = this.putter.invalidator().tsets();
@@ -32,7 +32,16 @@ suite.addBatch(test_helper.batch({
       }});
     }
   },
-  teardown: function(){ this.putter.stop(this.callback); }
+  'callback': {
+    topic: function(putter){
+      putter((new Event('test', fuck_wit_dre_day, {value: 3})).to_request(), this.callback);
+    },
+    'no error arg': function(arg1, arg2){
+      assert.instanceOf(arg1, Event);
+      assert.typeOf(arg2, 'undefined');
+    }
+  },
+  teardown: function(putter){ putter.stop(this.callback); }
 }));
 
 suite['export'](module);
