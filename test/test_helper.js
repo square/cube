@@ -172,7 +172,6 @@ test_helper.batch = function(batch) {
   return {
     "": {
       topic: function() {
-        metalog.warn('got here');
         var ctxt = this;
         ctxt.db = new Db();
         var options = _.extend({}, test_helper.settings, {collection_prefix: ('ts'+(++suite_id)+'_')});

@@ -18,13 +18,10 @@ suite.addBatch(test_helper.batch({
   'invalidates': {
     topic: function(){
       var ctxt = this;
-      test_helper.inspectify('a');
       ctxt.putter((new Event('test', ice_cubes_good_day, {value: 3})).to_request(), function(){
-        test_helper.inspectify('b');
         ctxt.putter((new Event('test', fuck_wit_dre_day, {value: 3})).to_request(), ctxt.callback);});
     },
-    'correct tiers': function(){
-      test_helper.inspectify('invalidates putter tiers', arguments);
+    'correct tiers': function(a,b){
       var ts = this.putter.invalidator().tsets();
       assert.deepEqual(ts, { 'test': {
         10e3:    [new Date('1992-02-20T01:08:00Z'), new Date('1993-03-18T08:44:50Z') ],
