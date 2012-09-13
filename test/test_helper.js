@@ -174,9 +174,12 @@ test_helper.batch = function(batch) {
       topic: function() {
         var ctxt = this;
         ctxt.db = new Db();
-        var options = _.extend({}, test_helper.settings, {collection_prefix: ('ts'+(++suite_id)+'_')});
+        var options = _.extend({}, test_helper.settings);
         ctxt.db.open(options, function(error){
-          drop_and_reopen_collections(ctxt.db, ctxt.callback);
+          drop_and_reopen_collections(ctxt.db, function(error){
+            ctxt.callback.apply(ctxt, arguments);
+            ctxt.db.clearCache();
+          });
         });
       },
       "": batch,
@@ -217,16 +220,16 @@ function drop_and_reopen_collections(test_db, cb){
   metalog.minor('test_db_drop_collections', { collections: test_collections });
 
   var collectionsRemaining = test_collections.length;
-  // test_collections.forEach(function(collection_name){
-  //   test_db.collection(collection_name, function(error, collection){
-  //     collection.drop(collectionReady);
-  //   })
-  // });
-  // function collectionReady() {
-  //   if (!--collectionsRemaining) {
-      test_db.events('test', function test_helper_go(){ cb(null, test_db); });
-  //   }
-  // }
+  test_collections.forEach(function(collection_name){
+    test_db.collection(collection_name, function(error, collection){
+      collection.drop(collectionReady);
+    })
+  });
+  function collectionReady() {
+    if (!--collectionsRemaining) {
+      cb(null, test_db);
+    }
+  }
 }
 
 // ==========================================================================
