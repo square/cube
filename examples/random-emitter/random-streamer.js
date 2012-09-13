@@ -13,31 +13,35 @@ var options = {
   // For example, if the offset is minus four hours, then the first event that
   // the random emitter sends will be four hours old. It will then generate more
   // recent events based on the step interval, all the way up to the duration.
-  "offset":   -0.49 * 60 * 60 * 1000,
-  "duration":  0.49 * 60 * 60 * 1000,
 
-  // The time between random events.
-  "step": 1000 * 2,
-
+  "event_frequency": 5000, // per second
   event_type: "doh"
 };
 
 var emitter = cube.emitter(options["collector"]);
 
-cromulator.start = Date.now()       + options.offset;
-cromulator.stop  = cromulator.start + options.duration;
-cromulator.step  = options.step;
-
 metalog.info('emitter', cromulator.report('starting'));
 
-var time = cromulator.start;
-while (time < cromulator.stop) {
-  var event = new Event(options.event_type, cromulator.spread_time(time), cromulator.data_at(time));
-  if (cromulator.count % 1000 == 0) metalog.info('emitter', {em: emitter.report(), cr: cromulator.report('progress', time)});
-  event.force = true;
-  emitter.send(event.to_request());
-  time += cromulator.step;
+function send(){
+  cromulator.start = new Date(Math.floor(new Date() / (1000 * 60 * 60 * 24)) * 1000 * 60 * 60 * 24);
+  cromulator.stop  = new Date(+cromulator.start + (1000 * 60 * 60 * 24));
+  cromulator.step  = 1000 / options.event_frequency;
+
+  var base_time = new Date(Math.floor(new Date() / 1000) * 1000),
+      step      = 1000 / options.event_frequency,
+      i         = 0;
+
+  while (i < options.event_frequency) {
+    var time  = new Date(+base_time + (step * i)),
+        event = new Event(options.event_type, time, cromulator.data_at(time));
+    if (i % 1000 == 0) metalog.info('emitter', {em: emitter.report(), cr: cromulator.report('progress', time)});
+    event.force = true;
+    emitter.send(event.to_request());
+    i = i + 1;
+  }
 }
 
-metalog.info('emitter', cromulator.report('stopping', time));
-emitter.close();
+setInterval(send, 1000);
+
+//metalog.info('emitter', cromulator.report('stopping', new Date()));
+//emitter.close();
