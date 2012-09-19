@@ -18,30 +18,29 @@ var options = {
   event_type: "doh"
 };
 
-var emitter = cube.emitter(options["collector"]);
+var emitter = cube.emitter(options["collector"]),
+    step    = 1 / options.event_frequency;
+
+
+function setup_cromulator(){
+  cromulator.start = new Date(Math.floor(new Date() / (1000 * 60 * 60 * 24)) * 1000 * 60 * 60 * 24);
+  cromulator.stop  = new Date(+cromulator.start + (1000 * 60 * 60 * 24));
+  cromulator.step  = 1 / options.event_frequency;
+}
 
 metalog.info('emitter', cromulator.report('starting'));
 
 function send(){
-  cromulator.start = new Date(Math.floor(new Date() / (1000 * 60 * 60 * 24)) * 1000 * 60 * 60 * 24);
-  cromulator.stop  = new Date(+cromulator.start + (1000 * 60 * 60 * 24));
-  cromulator.step  = 1000 / options.event_frequency;
+  if(+cromulator.stop <= +(new Date())) setup_cromulator();
 
-  var base_time = new Date(Math.floor(new Date() / 1000) * 1000),
-      step      = 1000 / options.event_frequency,
-      i         = 0;
-
-  while (i < options.event_frequency) {
-    var time  = new Date(+base_time + (step * i)),
-        event = new Event(options.event_type, time, cromulator.data_at(time));
-    if (i % 1000 == 0) metalog.info('emitter', {em: emitter.report(), cr: cromulator.report('progress', time)});
-    event.force = true;
-    emitter.send(event.to_request());
-    i = i + 1;
-  }
+  var time  = new Date(),
+      event = new Event(options.event_type, time, cromulator.data_at(time));
+  if (+time % 1000 == 0) metalog.info('emitter', {em: emitter.report(), cr: cromulator.report('progress', time)});
+  event.force = true;
+  emitter.send(event.to_request());
 }
 
-setInterval(send, 1000);
+setInterval(send, step);
 
 //metalog.info('emitter', cromulator.report('stopping', new Date()));
 //emitter.close();
