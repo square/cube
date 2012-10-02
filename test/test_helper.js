@@ -14,7 +14,7 @@ var _ = require("underscore"),
 //
 
 var test_helper = {};
-var test_collections   = ["test_users", "test_events", "test_metrics"];
+var test_collections   = ["test_users", "test_events", "test_metrics", "test_boards"];
 test_helper.inspectify = metalog.inspectify;
 
 test_helper.settings = {

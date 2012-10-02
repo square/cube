@@ -3,7 +3,8 @@
 var vows        = require("vows"),
     assert      = require("assert"),
     test_helper = require("./test_helper"),
-    models      = require("../lib/cube/models"), units = models.units, Event = models.Event,
+    Event       = require("../lib/cube/models/event"),
+    Metric      = require("../lib/cube/models/metric"),
     event       = require("../lib/cube/event");
 
 var suite = vows.describe("event");

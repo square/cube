@@ -7,7 +7,7 @@ var _ = require("underscore"),
     assert      = require("assert"),
     test_helper = require("./test_helper"),
     queuer      = require("../lib/queue-async/queue"),
-    models      = require("../lib/cube/models"), units = models.units,
+    units       = require("../lib/cube/tiers").units,
     event       = require("../lib/cube/event"),
     metric      = require("../lib/cube/metric");
 
@@ -25,7 +25,7 @@ var nowish       = Date.now(),
 var invalid_expression_error = { error: { message: 'Expected "(", "-", "distinct", "max", "median", "min", "sum" or number but "D" found.', column: 1, line: 1,  name: 'SyntaxError' }};
 
 function gen_date(sec){
-  return new Date(thenish + sec*units.second);
+  return new Date(thenish + sec * units.second);
 }
 
 var t1 = gen_date(3),  t1_10s = new Date(10e3 * Math.floor(t1/10e3)),
@@ -45,72 +45,6 @@ function assert_invalid_request(req, expected_err) {
   };
 }
 
-// suite.addBatch(test_helper.batch({
-//   topic: function(test_db){
-//     var putter   = event.putter(test_db),
-//         getter   = metric.getter(test_db),
-//         callback = this.callback,
-//         put_queue = queuer(10);
-//     // Seed the events table with a simple event: a value going from 0 to 2499
-//     for (var i = 0; i < 250; i++){
-//       put_queue.defer(function(num, dt, cb){
-//         putter({ type: "test", time: dt, data: {i: num}}, function(){ cb(null, null); });
-//       }, i, gen_date(i*10).toISOString());
-//     }
-//     put_queue.await(function(){ callback(null, getter) });
-//   },
-//   // 'invalid start': assert_invalid_request({start: 'THEN'}, {error: "invalid start"}),
-//   // 'invalid stop':  assert_invalid_request({stop:  'NOW'},  {error: "invalid stop"}),
-//   // 'invalid step':  assert_invalid_request({step:  'LEFT'}, {error: "invalid step"}),
-//   // 'invalid expression': assert_invalid_request({expression: 'DANCE'}, invalid_expression_error),
-// 
-//   'simple constant' : {
-//     topic:   function(getter){
-//       var checker = assert.isCalledTimes(this, 5);
-//       getter(gen_request({expression: '1'}), checker);
-//     },
-//     'gets a metric for each time slot': function(results){
-//       _.each([0,10,20,30], function(step, idx){
-//         assert.deepEqual(results[idx][0].report(), {time: gen_date(step), value: 1});
-//       });
-//     },
-//     'sends a null metric for the end slot': function(results){ assert.deepEqual(results[4][0].report(), {time: gen_date(40), value: null}); }
-//   },
-//   
-//   'no request id' : {
-//     topic:   function(getter){
-//       var checker = assert.isCalledTimes(this, 5);
-//       this.ret = getter(gen_request({}), checker);
-//     },
-//     'does not have id in result': function(results){
-//       test_helper.inspectify(results)
-//       _.each([0,10,20,30], function(step, idx){
-//         assert.isFalse("id" in results[idx][0]);
-//         assert.deepEqual(results[idx][0].report(), { time: gen_date(step), value: idx });
-//       });
-//     },
-//     'sends a null metric for the end slot': function(results){
-//       assert.deepEqual(results[4][0].report(), {time: gen_date(40), value: null});
-//     }
-//   },
-//   
-//   'with request id' : {
-//     topic:   function(getter){
-//       var checker = assert.isCalledTimes(this, 5);
-//       this.ret = getter(gen_request({id: 'joe', expression: 'sum(test(i))'}), checker);
-//     },
-//     'includes id in result': function(results){
-//       metalog.inspectify(results);
-//       _.each([0,10,20,30], function(step, idx){
-//         assert.deepEqual(results[idx][0].report(), { id: 'joe', time: gen_date(step), value: idx });
-//       });
-//     },
-//     'sends a null metric for the end slot': function(results){
-//       assert.deepEqual(results[4][0].report(), {id: 'joe', time: gen_date(40), value: null});
-//     }
-//   }
-//   
-// }));
 
 function skip(){ // FIXME: remove ------------------------------------------------------------
 
@@ -165,7 +99,7 @@ suite.addBatch(test_helper.batch({
   // FIXME: ---- remove below ------------------------------------
 
   "constant expression": metricTest({ expression: "1", start:      "2011-07-17T23:47:00.000Z", stop:       "2011-07-18T00:00:00.000Z"}, { 60e3:    [ 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  1             ] }),
-  
+
   "unary expression a": metricTest({
     expression: "sum(test)",
     start:      "2011-07-17T23:47:00.000Z",
@@ -173,7 +107,7 @@ suite.addBatch(test_helper.batch({
   }, {
     60e3:    [ 0,  0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23 ]
   }),
-  
+
   "unary expression b": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:47:00.000Z", stop:       "2011-07-18T00:00:00.000Z"}, { 60e3:    [ 0,  0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17             ] }),
   "unary expression c": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:48:00.000Z", stop:       "2011-07-18T00:01:00.000Z"}, { 60e3:    [     0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39         ] }),
   "unary expression d": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:49:00.000Z", stop:       "2011-07-18T00:02:00.000Z"}, { 60e3:    [         0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23     ] }),
@@ -191,9 +125,9 @@ suite.addBatch(test_helper.batch({
               95, 97, 99,  0,  0,  0,  0,  0,  0,  0,
               0,  0,  0]
   }),
-  
+
   // FIXME: ---- remove above ------------------------------------
-  
+
   "unary expression": metricTest({
     expression: "sum(test)",
     start:      "2011-07-17T23:47:00.000Z",
@@ -326,7 +260,7 @@ function metricTest(request, expected) {
 
     function get_metrics_with_delay(depth){ return function(){
       var actual   = [],
-          timeout  = setTimeout(function() { cb(new Error("Time's up!")); }, 20000),
+          timeout  = setTimeout(function() { console.log(" TIMING OUT NOW", request ); cb(new Error("Time's up!")); }, 20000),
           cb       = this.callback,
           req      = Object.create(request),
           getter   = arguments[depth];
