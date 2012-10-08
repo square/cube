@@ -16,6 +16,8 @@ var _ = require("underscore"),
 var test_helper = {};
 var test_collections   = ["test_users", "test_events", "test_metrics", "test_boards"];
 test_helper.inspectify = metalog.inspectify;
+test_helper._          = require('underscore');
+
 
 test_helper.settings = {
   "mongo-host":     "localhost",
@@ -24,7 +26,13 @@ test_helper.settings = {
   "mongo-password": null,
   "mongo-database": "cube_test",
   "host":           "localhost",
-  "authenticator":  "allow_all"
+  "authenticator":  "allow_all",
+
+
+  "horizons": {
+    "calculation":  +(new Date()),
+    "invalidation": +(new Date()),
+  }
 };
 
 // Disable logging for tests.
@@ -160,8 +168,6 @@ function start_server(options, register, ctxt, test_db){
 //
 // db helpers
 //
-
-var suite_id = 0;
 
 // test_helper.batch --
 // * connect to db, drop relevant collections

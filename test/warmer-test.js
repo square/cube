@@ -6,7 +6,7 @@ var _           = require('underscore'),
     test_helper = require("./test_helper"),
     event       = require("../lib/cube/event"),
     settings    = {"warmer-tier": 10000, "warmer-interval": 10000, horizons: { calculation: 30000 } },
-    warmer      = require("../lib/cube/warmer")(_.extend({}, settings, test_helper.settings));
+    warmer      = require("../lib/cube/warmer")(_.extend({}, test_helper.settings, settings));
 
 var suite = vows.describe("warmer");
 

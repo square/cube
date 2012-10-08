@@ -45,4 +45,25 @@ suite.addBatch(test_helper.batch({
   teardown: function(putter){ putter.stop(this.callback); }
 }));
 
+suite.addBatch(test_helper.batch({
+  topic: function(test_db) {
+    var horizon = new Date() - fuck_wit_dre_day + (1000 * 60),
+        options = this.settings = test_helper._.extend({}, test_helper.settings, {horizons: { invalidation: horizon }});
+    return event.putter(test_db.db, options);
+  },
+  'events past invalidation horizon': {
+    topic: function(putter){
+      var _this    = this,
+          event    = new Event('test', ice_cubes_good_day, {value: 3});
+      this.ret = putter(event.to_request(), this.callback);
+    },
+    'should error': function(error, response){
+      assert.deepEqual(error, {error: "event before invalidation horizon"});
+    },
+    'should return -1': function(error, response){
+      assert.equal(this.ret, -1);
+    }
+  }
+}));
+
 suite['export'](module);

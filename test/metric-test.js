@@ -7,7 +7,8 @@ var _ = require("underscore"),
     assert      = require("assert"),
     test_helper = require("./test_helper"),
     queuer      = require("../lib/queue-async/queue"),
-    units       = require("../lib/cube/tiers").units,
+    tiers       = require("../lib/cube/tiers"),
+    units       = tiers.units,
     event       = require("../lib/cube/event"),
     metric      = require("../lib/cube/metric");
 
@@ -45,7 +46,6 @@ function assert_invalid_request(req, expected_err) {
   };
 }
 
-
 function skip(){ // FIXME: remove ------------------------------------------------------------
 
 var steps = {
@@ -66,7 +66,7 @@ suite.addBatch(test_helper.batch({
     var putter    = event.putter(test_db),
         getter    = metric.getter(test_db),
         callback  = this.callback,
-    	put_queue = queuer(10);
+        put_queue = queuer(10);
     this.putter = putter;
 
     // Seed the events table with a simple event: a value going from 0 to 2499
@@ -81,18 +81,6 @@ suite.addBatch(test_helper.batch({
     }
     // continue when queue clears
     put_queue.await(function(){ callback(null, getter) });
-
-    // // Seed the events table with a simple event: a value going from 0 to 2499
-    // for (var i = 0; i < 2500; i++) {
-    //   putter({
-    //     type: "test",
-    //     time: new Date(Date.UTC(2011, 6, 18, 0, Math.sqrt(i) - 10)).toISOString(),
-    //     data: {i: i}
-    //   });
-    // }
-
-    // // So the events can settle in, wait `batch_testing_delay` ms before continuing
-    // setTimeout(function() { callback(null, getter); }, batch_testing_delay);
   },
   teardown: function(){ this.putter.stop(this.callback); },
 
@@ -112,7 +100,7 @@ suite.addBatch(test_helper.batch({
   "unary expression c": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:48:00.000Z", stop:       "2011-07-18T00:01:00.000Z"}, { 60e3:    [     0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39         ] }),
   "unary expression d": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:49:00.000Z", stop:       "2011-07-18T00:02:00.000Z"}, { 60e3:    [         0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23     ] }),
   "unary expression e": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:50:00.000Z", stop:       "2011-07-18T00:03:00.000Z"}, { 60e3:    [             1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23, 25 ] }),
-  
+
   "unary expression f": metricTest({
     expression: "sum(test)",
     start:      "2011-07-17T23:57:00.000Z",
@@ -138,7 +126,7 @@ suite.addBatch(test_helper.batch({
     3600e3:  [82, 2418],
     86400e3: [82, 2418]
   }),
-  
+
   "unary expression with data accessor": metricTest({
     expression: "sum(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
@@ -148,7 +136,7 @@ suite.addBatch(test_helper.batch({
     3600e3:  [3321, 3120429],
     86400e3: [3321, 3120429]
   }),
-  
+
   "unary expression with compound data accessor": metricTest({
     expression: "sum(test(i / 100))",
     start:      "2011-07-17T23:47:00.000Z",
@@ -158,7 +146,7 @@ suite.addBatch(test_helper.batch({
     3600e3:  [33.21, 31204.29],
     86400e3: [33.21, 31204.29]
   }),
-  
+
   "compound expression (sometimes fails due to race condition?)": metricTest({
     expression: "max(test(i)) - min(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
@@ -168,7 +156,7 @@ suite.addBatch(test_helper.batch({
     3600e3:  [81, 2417],
     86400e3: [81, 2417]
   }),
-  
+
   "non-pyramidal expression": metricTest({
     expression: "distinct(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
@@ -178,7 +166,7 @@ suite.addBatch(test_helper.batch({
     3600e3:  [82, 2418],
     86400e3: [82, 2418]
   }),
-  
+
   "compound pyramidal and non-pyramidal expression": metricTest({
     expression: "sum(test(i)) - median(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
@@ -188,7 +176,7 @@ suite.addBatch(test_helper.batch({
     3600e3:  [3280.5, 3119138.5],
     86400e3: [3280.5, 3119138.5]
   }),
-  
+
   "compound with constant expression": metricTest({
     expression: "-1 + sum(test)",
     start:      "2011-07-17T23:47:00.000Z",
@@ -198,7 +186,6 @@ suite.addBatch(test_helper.batch({
     3600e3:  [81, 2417],
     86400e3: [81, 2417]
   })
-
 }));
 
 // metricTest -- generates test tree for metrics.
