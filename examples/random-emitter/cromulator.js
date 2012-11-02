@@ -1,5 +1,4 @@
-var metalog    = require("../../lib/cube/metalog"),
-    models     = require("../../lib/cube/models");
+var metalog    = require("../../lib/cube/metalog");
 
 var un = {}; un.sec = 1000; un.min = 60 * un.sec; un.hr = 60 * un.min;
 

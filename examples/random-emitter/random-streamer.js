@@ -4,7 +4,7 @@ var cube       = require("../../"), // replace with require("cube")
     metalog    = cube.metalog,
     options    = require("./random-config"),
     cromulator = require("./cromulator"),
-    models     = require("../../lib/cube/models"), Event = models.Event;
+    Event      = require("../../lib/cube/models/event");
 
 var options = {
   "collector": "ws://127.0.0.1:6000",
