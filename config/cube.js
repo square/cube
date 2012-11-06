@@ -1,5 +1,9 @@
-var configs = {};
+'use strict';
 
+var configs = {},
+    metalog = require('../lib/cube/metalog');
+
+metalog.send_events = false;
 
 //
 //Shared configuration
@@ -11,13 +15,16 @@ configs.common = {
   "mongo-username": null,
   "mongo-password": null,
   "mongo-server_options": {auto_reconnect: true, poolSize: 8, socketOptions: { noDelay: true }},
-  
-  "mongo-metrics":  {capped: true, size: 1e7, autoIndexId: true},
-  "mongo-events":   {capped: true, size: 1e7, autoIndexId: true},
-  
+
+  "mongo-metrics":  {autoIndexId: true, capped: false            },
+  "mongo-events":   {autoIndexId: true, capped: true,  size: 1e9 },
+
+  "separate-events-database": true,
+
   "horizons": {
-    "calculation":          1000 * 60 * 60 * 2, // 2 hours
-    "invalidation":         1000 * 60 * 60 * 1, // 1 hour
+    "calculation":                 1000 * 60 * 60 * 2, // 2 hours
+    "invalidation":                1000 * 60 * 60 * 1, // 1 hour
+    "forced_metric_expiration":    1000 * 60 * 60 * 24 * 7, // 7 days
   }
 };
 
@@ -37,7 +44,8 @@ configs.collector = {
 //
 configs.evaluator = {
   "http-port": 1081,
-  "authenticator":  "mongo_cookie"
+  // "authenticator":  "mongo_cookie"
+  "authenticator": "allow_all"
 }
 
 

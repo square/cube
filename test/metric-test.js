@@ -1,9 +1,14 @@
-'use strict'
+'use strict';
 
-var vows        = require("vows"),
+var util = require("util"), metalog = require('../lib/cube/metalog');
+
+var _ = require("underscore"),
+    vows        = require("vows"),
     assert      = require("assert"),
     test_helper = require("./test_helper"),
-    models      = require("../lib/cube/models"), units = models.units,
+    queuer      = require("../lib/queue-async/queue"),
+    tiers       = require("../lib/cube/tiers"),
+    units       = tiers.units,
     event       = require("../lib/cube/event"),
     metric      = require("../lib/cube/metric");
 
@@ -14,7 +19,35 @@ var step_testing_delay  = 250,
 
 var suite = vows.describe("metric");
 
-var nowish = Date.now(), nowish10 = (10e3 * Math.floor(nowish/10e3));
+var nowish       = Date.now(),
+    nowish_floor = (10e3 * Math.floor(nowish/10e3)),
+    nowish_stop  = nowish_floor + 30e3,
+    thenish = Date.UTC(2011, 6, 18, 0, 0, 0);
+var invalid_expression_error = { error: { message: 'Expected "(", "-", "distinct", "max", "median", "min", "sum" or number but "D" found.', column: 1, line: 1,  name: 'SyntaxError' }};
+
+function gen_date(sec){
+  return new Date(thenish + sec * units.second);
+}
+
+var t1 = gen_date(3),  t1_10s = new Date(10e3 * Math.floor(t1/10e3)),
+    t2 = gen_date(35), t2_10s = new Date(10e3 * Math.floor(t2/10e3));
+
+function gen_request(attrs){
+  var req = { start: t1, stop: t2, step: units.second10, expression: 'max(test(i))'};
+  for (var key in attrs){ req[key] = attrs[key]; }
+  return req;
+}
+
+function assert_invalid_request(req, expected_err) {
+  return {
+    topic:   function(getter){ this.ret = getter(gen_request(req), this.callback); },
+    'fails':      function(err, val){ assert.deepEqual(err, expected_err); },
+    'returns -1': function(err, val){ assert.equal(this.ret, -1); }
+  };
+}
+
+function skip(){ // FIXME: remove ------------------------------------------------------------
+
 var steps = {
   10e3:    function(date, n) { return new Date((Math.floor(date / units.second10) + n) * units.second10); },
   60e3:    function(date, n) { return new Date((Math.floor(date / units.minute)   + n) * units.minute); },
@@ -22,7 +55,6 @@ var steps = {
   3600e3:  function(date, n) { return new Date((Math.floor(date / units.hour)     + n) * units.hour); },
   86400e3: function(date, n) { return new Date((Math.floor(date / units.day)      + n) * units.day); }
 };
-
 steps[units.second10].description = "10-second";
 steps[units.minute  ].description = "1-minute";
 steps[units.minute5 ].description = "5-minute";
@@ -31,27 +63,63 @@ steps[units.day     ].description = "1-day";
 
 suite.addBatch(test_helper.batch({
   topic: function(test_db) {
-    var putter = event.putter(test_db.db),
-    getter = metric.getter(test_db.db),
-    callback = this.callback;
+    var putter    = event.putter(test_db),
+        getter    = metric.getter(test_db),
+        callback  = this.callback,
+        put_queue = queuer(10);
+    this.putter = putter;
 
     // Seed the events table with a simple event: a value going from 0 to 2499
-    for (var i = 0; i < 2500; i++) {
-      putter({
-        type: "test",
-        time: new Date(Date.UTC(2011, 6, 18, 0, Math.sqrt(i) - 10)).toISOString(),
-        data: {i: i}
-      });
+    for (var i = 0; i < 2500; i++){
+      put_queue.defer(function(num, cb){
+        putter({
+          type: "test",
+          time: new Date(Date.UTC(2011, 6, 18, 0, Math.sqrt(num) - 10)).toISOString(),
+          data: {i: num}
+        }, function(){ cb(null, null); });
+      }, i);
     }
-
-    // So the events can settle in, wait `batch_testing_delay` ms before continuing
-    setTimeout(function() { callback(null, getter); }, batch_testing_delay);
+    // continue when queue clears
+    put_queue.await(function(){ callback(null, getter) });
   },
+  teardown: function(){ this.putter.stop(this.callback); },
+
+  // FIXME: ---- remove below ------------------------------------
+
+  "constant expression": metricTest({ expression: "1", start:      "2011-07-17T23:47:00.000Z", stop:       "2011-07-18T00:00:00.000Z"}, { 60e3:    [ 1,  1,  1,  1,  1,  1,  1,  1,  1,  1,   1,  1,  1             ] }),
+
+  "unary expression a": metricTest({
+    expression: "sum(test)",
+    start:      "2011-07-17T23:47:00.000Z",
+    stop:       "2011-07-18T00:02:00.000Z"
+  }, {
+    60e3:    [ 0,  0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23 ]
+  }),
+
+  "unary expression b": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:47:00.000Z", stop:       "2011-07-18T00:00:00.000Z"}, { 60e3:    [ 0,  0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17             ] }),
+  "unary expression c": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:48:00.000Z", stop:       "2011-07-18T00:01:00.000Z"}, { 60e3:    [     0,  0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39         ] }),
+  "unary expression d": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:49:00.000Z", stop:       "2011-07-18T00:02:00.000Z"}, { 60e3:    [         0,  1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23     ] }),
+  "unary expression e": metricTest({ expression: "sum(test)", start:      "2011-07-17T23:50:00.000Z", stop:       "2011-07-18T00:03:00.000Z"}, { 60e3:    [             1,  1,  3,  5,  7,  9, 11,  13, 15, 17, 39, 23, 25 ] }),
+
+  "unary expression f": metricTest({
+    expression: "sum(test)",
+    start:      "2011-07-17T23:57:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
+  }, {
+    60e3:    [13, 15, 17, 39, 23, 25, 27, 29, 31, 33,
+              35, 37, 39, 41, 43, 45, 47, 49, 51, 53,
+              55, 57, 59, 61, 63, 65, 67, 69, 71, 73,
+              75, 77, 79, 81, 83, 85, 87, 89, 91, 93,
+              95, 97, 99,  0,  0,  0,  0,  0,  0,  0,
+              0,  0,  0]
+  }),
+
+  // FIXME: ---- remove above ------------------------------------
 
   "unary expression": metricTest({
     expression: "sum(test)",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     60e3:    [0, 0, 0, 1, 1, 3, 5, 7, 9, 11, 13, 15, 17, 39, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 69, 71, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93, 95, 97, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     300e3:   [0, 17, 65, 143, 175, 225, 275, 325, 375, 425, 475, 0, 0],
@@ -82,7 +150,7 @@ suite.addBatch(test_helper.batch({
   "compound expression (sometimes fails due to race condition?)": metricTest({
     expression: "max(test(i)) - min(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     300e3:   [NaN, 16, 64, 142, 174, 224, 274, 324, 374, 424, 474, NaN, NaN],
     3600e3:  [81, 2417],
@@ -92,7 +160,7 @@ suite.addBatch(test_helper.batch({
   "non-pyramidal expression": metricTest({
     expression: "distinct(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     300e3:   [0, 17, 65, 143, 175, 225, 275, 325, 375, 425, 475, 0, 0],
     3600e3:  [82, 2418],
@@ -102,7 +170,7 @@ suite.addBatch(test_helper.batch({
   "compound pyramidal and non-pyramidal expression": metricTest({
     expression: "sum(test(i)) - median(test(i))",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     300e3:   [NaN, 128, 3136, 21726, 54288, 114688, 208788, 344088, 528088, 768288, 1072188, NaN, NaN],
     3600e3:  [3280.5, 3119138.5],
@@ -112,13 +180,12 @@ suite.addBatch(test_helper.batch({
   "compound with constant expression": metricTest({
     expression: "-1 + sum(test)",
     start:      "2011-07-17T23:47:00.000Z",
-    stop:       "2011-07-18T00:50:00.000Z",
+    stop:       "2011-07-18T00:50:00.000Z"
   }, {
     300e3:   [-1, 16, 64, 142, 174, 224, 274, 324, 374, 424, 474, -1, -1],
     3600e3:  [81, 2417],
     86400e3: [81, 2417]
   })
-
 }));
 
 // metricTest -- generates test tree for metrics.
@@ -133,13 +200,13 @@ suite.addBatch(test_helper.batch({
 //          topic:       function get_metrics_with_delay(getter){},
 //          'sum(test)': function metrics_assertions(actual){},
 //          '(cached)': {
-//            topic:       function get_metrics_with_delay(_, getter){},
+//            topic:       function get_metrics_with_delay(err, getter){},
 //            'sum(test)': function metrics_assertions(actual){} } },
 //        'at 1-day intervals': {
 //          topic:       function get_metrics_with_delay(getter){},
 //          'sum(test)': function metrics_assertions(actual){},
 //          '(cached)': {
-//            topic:       function get_metrics_with_delay(_, getter){},
+//            topic:       function get_metrics_with_delay(err, getter){},
 //            'sum(test)': function metrics_assertions(actual){} } }
 //      }
 //    }
@@ -148,7 +215,6 @@ function metricTest(request, expected) {
   // { 'at 1-minute intervals': { }, 'at 1-day intervals': { } }
   var tree = {}, k;
   for (var step in expected) tree["at " + steps[step].description + " intervals"] = testStep(step, expected[step]);
-  return tree;
 
   //
   // {
@@ -170,23 +236,21 @@ function metricTest(request, expected) {
   //
   function testStep(step, expected) {
     var start = new Date(request.start),
-    stop  = new Date(request.stop);
+        stop  = new Date(request.stop);
 
     var subtree = {
-      topic:   get_metrics_with_delay(0),
-      '(cached)': {
-        topic: get_metrics_with_delay(1), }
+      topic:      get_metrics_with_delay(0),
+      '(cached)': { topic: get_metrics_with_delay(1) }
     };
     subtree[request.expression] = metrics_assertions();
     subtree["(cached)"][request.expression] = metrics_assertions();
-    return subtree;
 
     function get_metrics_with_delay(depth){ return function(){
       var actual   = [],
-      timeout  = setTimeout(function() { cb("Time's up!"); }, 10000),
-      cb       = this.callback,
-      req      = Object.create(request),
-      getter   = arguments[depth];
+          timeout  = setTimeout(function() { console.log(" TIMING OUT NOW", request ); cb(new Error("Time's up!")); }, 20000),
+          cb       = this.callback,
+          req      = Object.create(request),
+          getter   = arguments[depth];
       req.step = step;
       // Wait long enough for the events to have settled in the db.  The
       // non-cached (depth=0) round can all start in parallel, making this an
@@ -194,7 +258,7 @@ function metricTest(request, expected) {
       setTimeout(function() {
         // ... then invoke the metrics getter. As responses roll in, push them
         // on to 'actual'; we're done when the 'stop' time is hit
-        getter(req, function(response) {
+        getter(req, function(response){
           if (response.time >= stop) {
             clearTimeout(timeout);
             cb(null, actual.sort(function(a, b) { return a.time - b.time; }));
@@ -203,7 +267,7 @@ function metricTest(request, expected) {
           }
         });
       }, depth * step_testing_delay);
-    }};
+    };}
 
     function metrics_assertions(){ return {
       'rounds down the start time (inclusive)': function(actual) {
@@ -231,6 +295,7 @@ function metricTest(request, expected) {
 
       'each metric defines only time and value properties': function(actual){
         actual.forEach(function(d) {
+          // if ('_trace' in d) delete d._trace;
           assert.deepEqual(Object.keys(d), ["time", "value"]);
         });
       },
@@ -255,9 +320,14 @@ function metricTest(request, expected) {
           }
         });
       }
+    };} // metric assertions
 
-    }}; // metric assertions
+    return subtree;
   } // subtree
+  return tree;
 } // tree
+}
+skip();
 
-suite.export(module);
+suite['export'](module);
+

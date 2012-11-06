@@ -1,9 +1,11 @@
 'use strict';
 
-var assert      = require("assert"),
+var _ = require("underscore"),
+    util        = require("util"),
+    assert      = require("assert"),
     http        = require("http"),
     dgram       = require('dgram'),
-    mongodb     = require("mongodb"),
+    Db          = require("../lib/cube/db"),
     metalog     = require("../lib/cube/metalog");
 
 // ==========================================================================
@@ -11,10 +13,11 @@ var assert      = require("assert"),
 // setup
 //
 
-var test_helper = {}
-var test_db     = {};
-var test_collections   = ["test_users", "test_events", "test_metrics"];
+var test_helper = {};
+var test_collections   = ["test_users", "test_events", "test_metrics", "test_boards"];
 test_helper.inspectify = metalog.inspectify;
+test_helper._          = require('underscore');
+
 
 test_helper.settings = {
   "mongo-host":     "localhost",
@@ -23,8 +26,14 @@ test_helper.settings = {
   "mongo-password": null,
   "mongo-database": "cube_test",
   "host":           "localhost",
-  "authenticator":  "allow_all"
-}
+  "authenticator":  "allow_all",
+
+
+  "horizons": {
+    "calculation":  +(new Date()),
+    "invalidation": +(new Date()),
+  }
+};
 
 // Disable logging for tests.
 metalog.loggers.info  = metalog.silent; // log
@@ -52,7 +61,7 @@ test_helper.request = function(options, data) {
     var cb = this.callback;
 
     options.host = "localhost";
-    if (! options.port){ options.port = this.http_port };
+    if (! options.port){ options.port = this.http_port; }
 
     var request = http.request(options, function(response) {
       response.body = "";
@@ -73,16 +82,16 @@ test_helper.udp_request = function (data){
   return function(){
     var udp_client = dgram.createSocket('udp4');
     var buffer     = new Buffer(JSON.stringify(data));
-    var context    = this;
-    metalog.info('sending_udp', {  data: data });
-    udp_client.send(buffer, 0, buffer.length, context.udp_port, 'localhost',
-        function(err, val){ delayed_callback(context)(err, val); udp_client.close(); } );
+    var ctxt       = this, cb = ctxt.callback;
+    metalog.info('test_sending_udp', {  data: data });
+    udp_client.send(buffer, 0, buffer.length, ctxt.udp_port, 'localhost',
+        function(err, val){ delay(cb, ctxt)(err, val); udp_client.close(); } );
   };
-}
+};
 
 // proxies to the test context's callback after a short delay.
 //
-// @example as a test topic; will get the same data the cb otherwise would have:
+// @example the test topic introduces a delay; the 'is party time' vow gets the same data the cb otherwise would have:
 //   { topic: send_some_data,
 //     'a short time later': {
 //       topic: test_helper.delaying_topic,
@@ -91,7 +100,7 @@ test_helper.udp_request = function (data){
 function delaying_topic(){
   var args = Array.prototype.slice.apply(arguments);
   args.unshift(null);
-  delayed_callback(this).apply(this, args);
+  delay(this.callback, this).apply(this, args);
 }
 test_helper.delaying_topic = delaying_topic;
 
@@ -100,21 +109,22 @@ test_helper.delaying_topic = delaying_topic;
 //
 // @example
 //    // you
-//    dcb = delayed_callback(this)
+//    dcb = delay(this)
 //    foo.do_something('...', dcb);
 //    // foo, after do_something'ing, invokes the delayed callback
 //    dcb(null, 1, 2);
 //    // 50ms later, dcb does the equivalent of
 //    this.callback(null, 1, 2);
 //
-function delayed_callback(context){
+function delay(orig_cb, ctxt, ms){
+  ctxt = ctxt || null;
+  ms   = ms   || 100;
   return function(){
-    var callback_delay = 100;
     var args = arguments;
-    setTimeout(function(){ context.callback.apply(context, args) }, callback_delay)
+    setTimeout(function(){ orig_cb.apply(ctxt, args); }, ms);
   };
 }
-test_helper.delayed_callback = delayed_callback;
+test_helper.delay = delay;
 
 // test_helper.with_server --
 //   start server, run tests once server starts, stop server when tests are done
@@ -126,23 +136,32 @@ test_helper.delayed_callback = delayed_callback;
 // @param components -- passed to server.register()
 // @param batch      -- the tests to run
 test_helper.with_server = function(options, components, batch){
-  return { '': {
-    topic:    function(){ start_server(options, components, this);  },
+  return test_helper.batch({ '': {
+    topic:    function(test_db){
+      var ctxt = this, cb = ctxt.callback;
+      start_server(options, components, ctxt, test_db);
+    },
     '':       batch,
-    teardown: function(svr){ this.server.stop(this.callback); }
-  } }
-}
+    teardown: function(j_, test_db){
+      var callback = this.callback;
+      this.server.stop(function(){
+        metalog.info('test_server_batch_closed');
+        callback();
+      });
+    }
+  } });
+};
 
 // @see test_helper.with_server
-function start_server(options, register, vow){
+function start_server(options, register, ctxt, test_db){
   for (var key in test_helper.settings){
     if (! options[key]){ options[key] = test_helper.settings[key]; }
   }
-  vow.http_port = options['http-port'];
-  vow.udp_port  = options['udp-port'];
-  vow.server = require('../lib/cube/server')(options);
-  vow.server.register = register;
-  vow.server.start(vow.callback);
+  ctxt.http_port = options['http-port'];
+  ctxt.udp_port  = options['udp-port'];
+  ctxt.server = require('../lib/cube/server')(options, test_db);
+  ctxt.server.register = register;
+  ctxt.server.start(ctxt.callback);
 }
 
 // ==========================================================================
@@ -155,17 +174,27 @@ function start_server(options, register, vow){
 // * run tests once db is ready;
 // * close db when tests are done
 test_helper.batch = function(batch) {
+  metalog.info('batch', batch);
   return {
     "": {
       topic: function() {
-        connect(test_helper.settings);
-        setup_db(this.callback);
+        var ctxt = this;
+        ctxt.db = new Db();
+        var options = _.extend({}, test_helper.settings);
+        ctxt.db.open(options, function(error){
+          drop_and_reopen_collections(ctxt.db, function(error){
+            ctxt.callback.apply(ctxt, arguments);
+            ctxt.db.clearCache();
+          });
+        });
       },
       "": batch,
-      teardown: function(test_db) {
-        if (test_db.client.isConnected()) {
-          process.nextTick(function(){ test_db.client.close(); });
-        };
+      teardown: function(){
+        var callback = this.callback;
+        this.db.close(function(){
+          metalog.info('test_db_batch_closed');
+          callback();
+        });
       }
     }
   };
@@ -174,14 +203,15 @@ test_helper.batch = function(batch) {
 // test_db.using_objects -- scaffold fixtures into the database, run tests once loaded.
 //
 // Wrap your tests in test_helper.batch to get the test_db object.
-test_db.using_objects = function (clxn_name, test_objects, context){
-  metalog.minor('cube_testdb', {state: 'loading test objects', test_objects: test_objects });
-  test_db.db.collection(clxn_name, function(err, clxn){
+Db.prototype.using_objects = function (clxn_name, test_objects, ctxt){
+  var test_db = this;
+  metalog.minor('test_db_loading_objects', test_objects);
+  test_db.collection(clxn_name, function(err, clxn){
     if (err) throw(err);
-    context[clxn_name] = clxn;
-    clxn.remove({ dummy: true }, {safe: true}, function(){
-      clxn.insert(test_objects, { safe: true }, function(){
-        context.callback(null, test_db);
+    ctxt[clxn_name] = clxn;
+    clxn.remove({ dummy: true }, function(){
+      clxn.insert(test_objects, function(){
+        ctxt.callback(null, test_db);
       }); });
   });
 };
@@ -192,33 +222,39 @@ test_db.using_objects = function (clxn_name, test_objects, context){
 //
 
 // @see test_helper.batch
-function setup_db(cb){
-  drop_collections(cb);
-}
+function drop_and_reopen_collections(test_db, cb){
+  metalog.minor('test_db_drop_collections', { collections: test_collections });
 
-// @see test_helper.batch
-function connect(options){
-  metalog.minor('cube_testdb', { state: 'connecting to db', options: options });
-  test_db.options = options;
-  test_db.client  = new mongodb.Server(options["mongo-host"], options["mongo-port"], {auto_reconnect: true});
-  test_db.db      = new mongodb.Db(options["mongo-database"], test_db.client, {});
-}
-
-// @see test_helper.batch
-function drop_collections(cb){
-  metalog.minor('cube_testdb', { state: 'dropping test collections', collections: test_collections });
-  test_db.db.open(function(error) {
-    var collectionsRemaining = test_collections.length;
-    test_collections.forEach(function(collection_name){
-      test_db.db.dropCollection(collection_name,  collectionReady);
-    });
-    function collectionReady() {
-      if (!--collectionsRemaining) {
-        cb(null, test_db);
-      }
-    }
+  var collectionsRemaining = test_collections.length;
+  test_collections.forEach(function(collection_name){
+    test_db.collection(collection_name, function(error, collection){
+      collection.drop(collectionReady);
+    })
   });
+  function collectionReady() {
+    if (!--collectionsRemaining) {
+      cb(null, test_db);
+    }
+  }
 }
+
+// ==========================================================================
+//
+// assertions
+//
+
+assert.isCalledTimes = function(ctxt, reps){
+  var results = [], finished = false;
+  setTimeout(function(){ if (! finished){ ctxt.callback(new Error('timeout: need '+reps+' results only have '+util.inspect(results))); } }, 2000);
+  return function _is_called_checker(){
+    results.push(_.toArray(arguments));
+    if (results.length >= reps){ finished = true; ctxt.callback(null, results); }
+  };
+};
+
+assert.isNotCalled = function(name){
+  return function(){ throw new Error(name + ' should not have been called, but was'); };
+};
 
 // ==========================================================================
 //

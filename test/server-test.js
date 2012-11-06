@@ -18,8 +18,8 @@ var example = {
 
 var server_options = {
   'http-port': test_helper.get_port(),
-  'udp-port':  test_helper.get_port(),
-}
+  'udp-port':  test_helper.get_port()
+};
 function dummy_server(db, endpoints){
   endpoints.udp = function(req, cb){
     // metalog.info('rcvd_udp', { req: req });
@@ -30,7 +30,7 @@ function dummy_server(db, endpoints){
       metalog.info('rcvd_http', { req: req });
       bucket.httped.push(req);
     })));
-};
+}
 
 suite.addBatch(
   test_helper.with_server(server_options, dummy_server, {
@@ -103,4 +103,4 @@ suite.addBatch(
 
 }));
 
-suite.export(module);
+suite['export'](module);

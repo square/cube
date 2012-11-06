@@ -242,4 +242,4 @@ suite.addBatch({
 
 });
 
-suite.export(module);
+suite['export'](module);

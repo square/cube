@@ -87,13 +87,12 @@ suite.addBatch({
     "has the key 6e4": function(tier) {
       assert.strictEqual(tier.key, 6e4);
     },
-    "next is undefined": function(tier) {
-      assert.isUndefined(tier.next);
+    "next is the 10-second tier": function(tier) {
+      assert.equal(tier.next, tiers[1e4]);
     },
-    "size is undefined": function(tier) {
-      assert.isUndefined(tier.size);
+    "size is 6": function(tier) {
+      assert.strictEqual(tier.size(), 6);
     },
-
     "floor": {
       "rounds down to minutes": function(tier) {
         assert.deepEqual(tier.floor(utc(2011,  8,  2, 12, 20,  0)), utc(2011,  8,  2, 12, 20));
@@ -151,11 +150,11 @@ suite.addBatch({
     "has the key 3e5": function(tier) {
       assert.strictEqual(tier.key, 3e5);
     },
-    "next is undefined": function(tier) {
-      assert.isUndefined(tier.next);
+    "next is the minute tier": function(tier) {
+      assert.equal(tier.next, tiers[6e4]);
     },
-    "size is undefined": function(tier) {
-      assert.isUndefined(tier.size);
+    "size is 5": function(tier) {
+      assert.strictEqual(tier.size(), 5);
     },
 
     "floor": {
@@ -340,4 +339,4 @@ function utc(year, month, day, hours, minutes, seconds) {
   return new Date(Date.UTC(year, month, day, hours || 0, minutes || 0, seconds || 0));
 }
 
-suite.export(module);
+suite['export'](module);

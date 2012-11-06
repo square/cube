@@ -13,7 +13,14 @@ var start = Date.now() + options["offset"],
     value = 0,
     count = 0;
 
-while (start < stop) {
+function insert(start){
+  if(start > stop){
+    util.log("sent " + count + " events");
+    util.log("stopping emitter");
+    emitter.close();
+    return;
+  }
+  count++;
   emitter.send({
     type: "random",
     time: new Date(start),
@@ -21,10 +28,7 @@ while (start < stop) {
       value: value += Math.random() - .5
     }
   });
-  start += step;
-  ++count;
+  process.nextTick(function(){ insert(start + step) });
 }
 
-util.log("sent " + count + " events");
-util.log("stopping emitter");
-emitter.close();
+insert(start);
