@@ -1,3 +1,5 @@
+'use strict';
+
 var configs = {},
     metalog = require('../lib/cube/metalog');
 
@@ -20,8 +22,9 @@ configs.common = {
   "separate-events-database": true,
 
   "horizons": {
-    "calculation":          1000 * 60 * 60 * 2, // 2 hours
-    "invalidation":         1000 * 60 * 60 * 1, // 1 hour
+    "calculation":                 1000 * 60 * 60 * 2, // 2 hours
+    "invalidation":                1000 * 60 * 60 * 1, // 1 hour
+    "forced_metric_expiration":    1000 * 60 * 60 * 24 * 7, // 7 days
   }
 };
 
