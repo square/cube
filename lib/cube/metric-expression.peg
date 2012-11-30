@@ -117,9 +117,12 @@ metric_unary_expression
   / metric_primary_expression
 
 metric_primary_expression
-  = reduce:reduce _ "(" _ event:event_expression _ ")" { event.reduce = reduce; event.source = input.substring(savedPos3, pos); return event; }
+  = reduce:reduce _ "(" _ event:event_expression _ ")" group:(_ "." _ metric_group_expression)? { event.reduce = reduce; event.source = input.substring(pos0, pos); if(group) event.group = group[3]; return event; }
   / value:number { return {value: function() { return value; }}; }
   / "(" _ expression:metric_additive_expression _ ")" { return expression; }
+
+metric_group_expression
+  = "group" _ "(" _ member:event_member_expression _ ")" { return member; }
 
 event_expression
   = value:event_value_expression filters:(_ "." _ event_filter_expression)*
