@@ -16,11 +16,11 @@
   },
   "main": "./lib/cube",
   "dependencies": {
-    "node-static": "0.6.1",
-    "pegjs": "0.6.2",
-    "vows": "0.5.11",
-    "websocket": "1.0.3",
-    "websocket-server": "1.4.04",
-    "mongodb": "~1.2.14"
+    "mongodb": "1.2.14",
+    "node-static": "0.6.5",
+    "pegjs": "0.7.0",
+    "vows": "0.7.0",
+    "websocket": "1.0.8",
+    "websocket-server": "1.4.04"
   }
 }
