@@ -1,6 +1,6 @@
 var vows = require("vows"),
     assert = require("assert"),
-    test = require("./test"),
+    test = require("./helpers"),
     event = require("../lib/cube/event"),
     metric = require("../lib/cube/metric");
 

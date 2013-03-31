@@ -1,7 +1,7 @@
 var vows = require("vows"),
     assert = require("assert"),
     cube = require("../"),
-    test = require("./test");
+    test = require("./helpers");
 
 var suite = vows.describe("collector");
 

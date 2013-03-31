@@ -1,6 +1,6 @@
 var vows = require("vows"),
     assert = require("assert"),
-    test = require("./test"),
+    test = require("./helpers"),
     types = require("../lib/cube/types"),
     mongodb = require("mongodb");
 

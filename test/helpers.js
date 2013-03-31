@@ -1,5 +1,4 @@
 var mongodb = require("mongodb"),
-    assert = require("assert"),
     util = require("util"),
     http = require("http");
 
@@ -9,10 +8,13 @@ exports.batch = function(batch) {
   return {
     "": {
       topic: function() {
-        var client = new mongodb.Server("localhost", 27017);
+        var client = new mongodb.Server("localhost", 27017),
             db = new mongodb.Db("cube_test", client, { safe: false }),
             cb = this.callback;
         db.open(function(error) {
+          if (error) {
+            return cb(error);
+          }
           var collectionsRemaining = 2;
           db.dropCollection("test_events", collectionReady);
           db.dropCollection("test_metrics", collectionReady);
