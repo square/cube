@@ -10,7 +10,7 @@ exports.batch = function(batch) {
     "": {
       topic: function() {
         var client = new mongodb.Server("localhost", 27017);
-            db = new mongodb.Db("cube_test", client),
+            db = new mongodb.Db("cube_test", client, { safe: false }),
             cb = this.callback;
         db.open(function(error) {
           var collectionsRemaining = 2;

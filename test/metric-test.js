@@ -34,7 +34,17 @@ suite.addBatch(test.batch({
       });
     }
 
-    setTimeout(function() { callback(null, getter); }, 500);
+    function waitForEvents() {
+      test.db.collection("test_events").count(function(err,count) {
+        if (count == 2500) {
+          callback(null, getter);
+        } else {
+          setTimeout(waitForEvents, 10);
+        }
+      });
+    }
+
+    setTimeout(waitForEvents,10);
   },
 
   "unary expression": metricTest({
@@ -68,6 +78,26 @@ suite.addBatch(test.batch({
       3e5: [0, 1.36, 31.85, 218.79, 546, 1152, 2095.5, 3451.5, 5295, 7701, 10744.5, 0, 0],
       36e5: [33.21, 31204.29],
       864e5: [33.21, 31204.29]
+    }
+  ),
+
+  "max expression": metricTest({
+      expression: "max(test(i))",
+      start: "2011-07-17T23:47:00.000Z",
+      stop: "2011-07-18T00:50:00.000Z",
+    }, {
+      36e5: [81, 2499],
+      864e5: [81, 2499]
+    }
+  ),
+
+  "min expression": metricTest({
+      expression: "min(test(i))",
+      start: "2011-07-17T23:47:00.000Z",
+      stop: "2011-07-18T00:50:00.000Z",
+    }, {
+      36e5: [0, 82],
+      864e5: [0, 82]
     }
   ),
 
