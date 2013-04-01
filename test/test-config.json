@@ -1,0 +1,6 @@
+{
+  "mongo-host": "localhost",
+  "mongo-port": 27017,
+  "mongo-database": "cube_test",
+  "http-port": 1083
+}

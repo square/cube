@@ -5,12 +5,10 @@ var vows = require("vows"),
 
 var suite = vows.describe("collector");
 
-var port = ++test.port, server = cube.server({
-  "mongo-host": "localhost",
-  "mongo-port": 27017,
-  "mongo-database": "cube_test",
-  "http-port": port
-});
+var server = cube.server(test.config),
+    port = test.config["http-port"];
+
+console.log('collector port %s', port);
 
 server.register = cube.collector.register;
 
@@ -30,7 +28,7 @@ suite.addBatch(test.batch({
   "POST /event/put with a JSON object": {
     topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify({
       type: "test",
-      time: new Date,
+      time: new Date(),
       data: {
         foo: "bar"
       }
@@ -46,7 +44,7 @@ suite.addBatch(test.batch({
   "POST /event/put with a JSON array": {
     topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify([{
       type: "test",
-      time: new Date,
+      time: new Date(),
       data: {
         foo: "bar"
       }
