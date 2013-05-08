@@ -16,12 +16,14 @@
 <script>
 
 //
-var step = +cubism.option("step", 1e4);
+var step = +cubism.option("step", 1e4),
+    offset = +cubism.option("offset", 0);
 
 //
 var context = cubism.context()
     .step(step)
-    .size(1440);
+    .size(1440)
+    .serverDelay(offset);
 
 //
 var cube = context.cube();
