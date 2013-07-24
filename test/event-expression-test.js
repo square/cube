@@ -1,6 +1,8 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    parser = require("../lib/cube/event-expression");
+'use strict';
+
+var vows        = require("vows"),
+    assert      = require("assert"),
+    parser      = require("../lib/cube/event-expression");
 
 var suite = vows.describe("event-expression");
 
@@ -240,4 +242,4 @@ suite.addBatch({
 
 });
 
-suite.export(module);
+suite['export'](module);

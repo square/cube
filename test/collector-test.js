@@ -1,34 +1,28 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    cube = require("../"),
-    test = require("./helpers");
+'use strict';
+
+var vows        = require("vows"),
+    assert      = require("assert"),
+    test_helper = require("./test_helper"),
+    cube        = require("../");
 
 var suite = vows.describe("collector");
 
-var server = cube.server(test.config),
-    port = test.config["http-port"];
+var server_options = { 'http-port': test_helper.get_port() };
 
-console.log('collector port %s', port);
+suite.addBatch(
+  test_helper.with_server(server_options, cube.collector.register, {
 
-server.register = cube.collector.register;
-
-server.start();
-
-suite.addBatch(test.batch({
   "POST /event/put with invalid JSON": {
-    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, "This ain't JSON.\n"),
+    topic: test_helper.request({method: "POST", path: "/1.0/event/put"}, "This ain't JSON.\n"),
     "responds with status 400": function(response) {
       assert.equal(response.statusCode, 400);
       assert.deepEqual(JSON.parse(response.body), {error: "SyntaxError: Unexpected token T"});
     }
-  }
-}));
-
-suite.addBatch(test.batch({
+  },
   "POST /event/put with a JSON object": {
-    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify({
+    topic: test_helper.request({method: "POST", path: "/1.0/event/put"}, JSON.stringify({
       type: "test",
-      time: new Date(),
+      time: new Date,
       data: {
         foo: "bar"
       }
@@ -37,14 +31,11 @@ suite.addBatch(test.batch({
       assert.equal(response.statusCode, 400);
       assert.deepEqual(JSON.parse(response.body), {error: "TypeError: Object #<Object> has no method 'forEach'"});
     }
-  }
-}));
-
-suite.addBatch(test.batch({
+  },
   "POST /event/put with a JSON array": {
-    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify([{
+    topic: test_helper.request({method: "POST", path: "/1.0/event/put"}, JSON.stringify([{
       type: "test",
-      time: new Date(),
+      time: new Date,
       data: {
         foo: "bar"
       }
@@ -53,22 +44,16 @@ suite.addBatch(test.batch({
       assert.equal(response.statusCode, 200);
       assert.deepEqual(JSON.parse(response.body), {});
     }
-  }
-}));
-
-suite.addBatch(test.batch({
+  },
   "POST /event/put with a JSON number": {
-    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify(42)),
+    topic: test_helper.request({method: "POST", path: "/1.0/event/put"}, JSON.stringify(42)),
     "responds with status 400": function(response) {
       assert.equal(response.statusCode, 400);
       assert.deepEqual(JSON.parse(response.body), {error: "TypeError: Object 42 has no method 'forEach'"});
     }
-  }
-}));
-
-suite.addBatch(test.batch({
+  },
   "POST /event/put without an associated time": {
-    topic: test.request({method: "POST", port: port, path: "/1.0/event/put"}, JSON.stringify([{
+    topic: test_helper.request({method: "POST", path: "/1.0/event/put"}, JSON.stringify([{
       type: "test",
       data: {
         foo: "bar"
@@ -81,4 +66,4 @@ suite.addBatch(test.batch({
   }
 }));
 
-suite.export(module);
+suite['export'](module);

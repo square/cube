@@ -1,6 +1,8 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    reduces = require("../lib/cube/reduces");
+'use strict';
+
+var vows        = require("vows"),
+    assert      = require("assert"),
+    reduces     = require("../lib/cube/reduces");
 
 var suite = vows.describe("reduces");
 
@@ -135,4 +137,4 @@ suite.addBatch({
   }
 });
 
-suite.export(module);
+suite['export'](module);

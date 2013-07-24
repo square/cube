@@ -1,6 +1,8 @@
-var vows = require("vows"),
-    assert = require("assert"),
-    parser = require("../lib/cube/metric-expression");
+'use strict';
+
+var vows        = require("vows"),
+    assert      = require("assert"),
+    parser      = require("../lib/cube/metric-expression");
 
 var suite = vows.describe("metric-expression");
 
@@ -205,7 +207,7 @@ suite.addBatch({
       assert.isUndefined(e.source);
     },
     "computes the specified value expression": function(e) {
-      assert.equal(e.op(2, 3), 5)
+      assert.equal(e.op(2, 3), 5);
     }
   },
 
@@ -223,7 +225,7 @@ suite.addBatch({
   "a negated unary expression": {
     topic: parser.parse("-sum(foo)"),
     "negates the specified value expression": function(e) {
-      assert.equal(e.value(), -1)
+      assert.equal(e.value(), -1);
     },
     "has the expected source": function(e) {
       assert.equal(e.source, "-sum(foo)");
@@ -233,7 +235,7 @@ suite.addBatch({
   "constant expressions": {
     topic: parser.parse("-4"),
     "has a constant value": function(e) {
-      assert.equal(e.value(), -4)
+      assert.equal(e.value(), -4);
     },
     "does not have a source": function(e) {
       assert.isUndefined(e.source);
@@ -300,4 +302,4 @@ suite.addBatch({
 
 });
 
-suite.export(module);
+suite['export'](module);
