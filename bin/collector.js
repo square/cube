@@ -1,11 +1,8 @@
 'use strict';
 
-var options = require("../config/cube").include("collector"),
-    cube = require("../"),
-    server = cube.server(options);
+var cube = require("../"),
+    server = cube.server('collector');
 
-server.register = function(db, endpoints) {
-  cube.collector.register(db, endpoints);
-};
-
-server.start();
+server
+  .use(cube.collector.register)
+  .start();

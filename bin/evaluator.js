@@ -1,12 +1,9 @@
 'use strict';
 
-var options = require("../config/cube").include('evaluator'),
-    cube = require("../"),
-    server = cube.server(options);
+var cube = require("../"),
+    server = cube.server('evaluator');
 
-server.register = function(db, endpoints) {
-  cube.evaluator.register(db, endpoints);
-  cube.visualizer.register(db, endpoints);
-};
-
-server.start();
+server
+  .use(cube.evaluator.register)
+  .use(cube.visualizer.register)
+  .start();

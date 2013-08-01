@@ -1,22 +1,23 @@
-var config = require('./config/cube'),
-    Db     = require('./lib/cube/db');
+var config   = require('./config/cube'),
+    Db       = require('./lib/cube/db'),
+    horizons = config.get('horizons');
 
 namespace("db", function(){
   namespace("metrics", function(){
     desc("Remove metrics with times past the forced metric expiration horizon")
     task("remove_expired", [], function(){
-      if(!config.horizons.forced_metric_expiration){
+      if(!horizons.forced_metric_expiration){
         throw new Error("horizons.forced_metric_expiration MUST be set in: config/cube.js");
       }
 
       var db = new Db(),
-          expiration_date = new Date(new Date() - config.horizons.forced_metric_expiration);
+          expiration_date = new Date(new Date() - horizons.forced_metric_expiration);
 
       function handle(err) {
         if(err) throw err;
       }
 
-      db.open(config, function(err, db){
+      db.open(function(err, db){
         handle(err);
         var metrics_db = db._dbs.metrics;
         metrics_db.collectionNames({namesOnly: true}, function(err, names){

@@ -7,10 +7,8 @@ var vows        = require("vows"),
 
 var suite = vows.describe("collector");
 
-var server_options = { 'http-port': test_helper.get_port() };
-
 suite.addBatch(
-  test_helper.with_server(server_options, cube.collector.register, {
+  test_helper.with_server('collector', cube.collector.register, {
 
   "POST /event/put with invalid JSON": {
     topic: test_helper.request({method: "POST", path: "/1.0/event/put"}, "This ain't JSON.\n"),

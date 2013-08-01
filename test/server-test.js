@@ -16,10 +16,6 @@ var example = {
   for_http: { type: "monotreme", time: now_ish, data: { echidnae:   4 } },
   for_udp:  { type: "monotreme", time: now_ish, data: { platypodes: 9 } } };
 
-var server_options = {
-  'http-port': test_helper.get_port(),
-  'udp-port':  test_helper.get_port()
-};
 function dummy_server(db, endpoints){
   endpoints.udp = function(req, cb){
     // metalog.info('rcvd_udp', { req: req });
@@ -33,7 +29,8 @@ function dummy_server(db, endpoints){
 }
 
 suite.addBatch(
-  test_helper.with_server(server_options, dummy_server, {
+  // Set to `collector` because it's the only one with both http and udp
+  test_helper.with_server('collector', dummy_server, {
 
   http: {
     topic: test_helper.request({path: "/1.0/test", method: "POST"}, JSON.stringify([example.for_http])),

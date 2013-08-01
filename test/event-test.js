@@ -4,8 +4,8 @@ var vows        = require("vows"),
     assert      = require("assert"),
     test_helper = require("./test_helper"),
     Event       = require("../lib/cube/models/event"),
-    Metric      = require("../lib/cube/models/metric"),
-    event       = require("../lib/cube/event");
+    event       = require("../lib/cube/event"),
+    config      = require('../config/cube');
 
 var suite = vows.describe("event");
 
@@ -47,9 +47,14 @@ suite.addBatch(test_helper.batch({
 
 suite.addBatch(test_helper.batch({
   topic: function(test_db) {
-    var horizon = new Date() - fuck_wit_dre_day + (1000 * 60),
-        options = this.settings = test_helper._.extend({}, test_helper.settings, {horizons: { invalidation: horizon }});
-    return event.putter(test_db.db, options);
+    var horizon = new Date() - fuck_wit_dre_day + (1000 * 60);
+
+    // Temporarily override horizons settings
+    this.oldHorizons = config.get('horizons');
+    config.set('horizons', {
+      invalidation: horizon
+    });
+    return event.putter(test_db.db);
   },
   'events past invalidation horizon': {
     topic: function(putter){
@@ -63,7 +68,10 @@ suite.addBatch(test_helper.batch({
     'should return -1': function(error, response){
       assert.equal(this.ret, -1);
     }
-  }
+  }/*,
+  teardown: function() {
+    config.set('horizons', this.oldHorizons);
+  }*/
 }));
 
 suite['export'](module);

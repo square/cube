@@ -5,17 +5,25 @@ var _           = require('underscore'),
     assert      = require("assert"),
     test_helper = require("./test_helper"),
     event       = require("../lib/cube/event"),
-    settings    = {"warmer-tier": 10000, "warmer-interval": 10000, horizons: { calculation: 30000 } },
-    warmer      = require("../lib/cube/warmer")(_.extend({}, test_helper.settings, settings));
+    config      = require("../config/cube"),
+    warmer      = require("../lib/cube/warmer");
 
 var suite = vows.describe("warmer");
 
 suite.addBatch(test_helper.batch({
   topic: function(test_db) {
+    // Temporarily override horizons settings
+    this.oldHorizons = config.get('horizons');
+    config.set('horizons', {
+      calculation: 30000
+    });
+
     var board  = { pieces: [{ query: "sum(test(value))" }] },
         nowish = this.nowish = (10e3 * Math.floor(new Date()/10e3)),
         putter = this.putter = event.putter(test_db),
         _this  = this;
+
+    this.warmer = warmer();
 
     putter({type: 'test', time: nowish + 500, data: {value: 10}}, function(){
       putter({type: 'test', time: nowish + 2000, data: {value: 5}}, function(){
@@ -30,11 +38,11 @@ suite.addBatch(test_helper.batch({
     topic: function(test_db){
       var _this = this;
 
-      warmer.start()
+      this.warmer.start();
       setTimeout(function(){
         test_db.metrics('test', function(error, collection){
-          collection.find().toArray(_this.callback)
-        })
+          collection.find().toArray(_this.callback);
+        });
       }, 1000);
     },
     'correct number of metrics':  function(metrics){ assert.equal(metrics.length, 3); },
@@ -45,7 +53,8 @@ suite.addBatch(test_helper.batch({
     }
   },
   teardown: function(){
-    warmer.stop();
+    config.set('horizons', this.oldHorizons);
+    this.warmer.stop();
     this.putter.stop(this.callback);
   }
 }));

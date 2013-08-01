@@ -6,7 +6,8 @@ var _ = require("underscore"),
     http        = require("http"),
     dgram       = require('dgram'),
     Db          = require("../lib/cube/db"),
-    metalog     = require("../lib/cube/metalog");
+    metalog     = require("../lib/cube/metalog"),
+    config      = require("../config/cube");
 
 // ==========================================================================
 //
@@ -18,22 +19,38 @@ var test_collections   = ["test_users", "test_events", "test_metrics", "test_boa
 test_helper.inspectify = metalog.inspectify;
 test_helper._          = require('underscore');
 
+config.set('mongodb', {
+  'mongo-host': 'localhost',
+  'mongo-port': 27017,
+  'mongo-username': null,
+  'mongo-password': null,
+  'mongo-database': 'cube_test',
+  'host': 'localhost',
+  'authentication-collection': 'test_users'
+});
 
-test_helper.settings = {
-  "mongo-host":     "localhost",
-  "mongo-port":     27017,
-  "mongo-username": null,
-  "mongo-password": null,
-  "mongo-database": "cube_test",
-  "host":           "localhost",
-  "authenticator":  "allow_all",
+config.set('horizons', {
+  calculation: +(new Date()),
+  invalidation: +(new Date())
+});
 
+var basePort = 1083;
+config.set('collector', {
+  'http-port': basePort++,
+  'udp-port': basePort++,
+  'authenticator': 'allow_all'
+});
 
-  "horizons": {
-    "calculation":  +(new Date()),
-    "invalidation": +(new Date()),
-  }
-};
+config.set('evaluator', {
+  'http-port': basePort++,
+  'authenticator': 'allow_all'
+});
+
+config.set('warmer', {
+  'warmer-interval': 10000,
+  'warmer-tier': 10000
+});
+
 
 // Disable logging for tests.
 metalog.loggers.info  = metalog.silent; // log
@@ -44,10 +61,6 @@ metalog.send_events = false;
 //
 // client / server helpers
 //
-
-var port = 1083;
-// test_helper.get_port() -- get a port ID, unique to your batch.
-test_helper.get_port = function(){ return ++port; };
 
 // test_helper.request -- make an HTTP request.
 //
@@ -132,14 +145,14 @@ test_helper.delay = delay;
 // inscribes 'server', 'udp_port' and 'http_port' on the test context -- letting
 // you say 'this.server' in your topics, etc.
 //
-// @param options    -- overrides for the settings, above.
+// @param kind       -- types of server to run.
 // @param components -- passed to server.register()
 // @param batch      -- the tests to run
-test_helper.with_server = function(options, components, batch){
+test_helper.with_server = function(kind, components, batch){
   return test_helper.batch({ '': {
     topic:    function(test_db){
       var ctxt = this, cb = ctxt.callback;
-      start_server(options, components, ctxt, test_db);
+      start_server(kind, components, ctxt, test_db);
     },
     '':       batch,
     teardown: function(j_, test_db){
@@ -153,14 +166,12 @@ test_helper.with_server = function(options, components, batch){
 };
 
 // @see test_helper.with_server
-function start_server(options, register, ctxt, test_db){
-  for (var key in test_helper.settings){
-    if (! options[key]){ options[key] = test_helper.settings[key]; }
-  }
-  ctxt.http_port = options['http-port'];
-  ctxt.udp_port  = options['udp-port'];
-  ctxt.server = require('../lib/cube/server')(options, test_db);
-  ctxt.server.register = register;
+function start_server(kind, register, ctxt, test_db){
+  var config = require('../config/cube').get(kind);
+  ctxt.http_port = config['http-port'];
+  ctxt.udp_port  = config['udp-port'];
+  ctxt.server = require('../lib/cube/server')(kind, test_db);
+  ctxt.server.use(register);
   ctxt.server.start(ctxt.callback);
 }
 
@@ -180,8 +191,7 @@ test_helper.batch = function(batch) {
       topic: function() {
         var ctxt = this;
         ctxt.db = new Db();
-        var options = _.extend({}, test_helper.settings);
-        ctxt.db.open(options, function(error){
+        ctxt.db.open(function(error){
           drop_and_reopen_collections(ctxt.db, function(error){
             ctxt.callback.apply(ctxt, arguments);
             ctxt.db.clearCache();
