@@ -11,7 +11,7 @@ metalog.send_events = false;
 configs.common = {
   "mongo-host": "127.0.0.1",
   "mongo-port": 27017,
-  "mongo-database": "dashpot_development",
+  "mongo-database": "cube",
   "mongo-username": null,
   "mongo-password": null,
   "mongo-server_options": {auto_reconnect: true, poolSize: 8, socketOptions: { noDelay: true }},
