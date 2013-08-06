@@ -1,3 +1,0 @@
-[submodule "lib/queue-async"]
-	path = lib/queue-async
-	url = https://github.com/mbostock/queue.git
