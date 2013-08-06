@@ -20,7 +20,7 @@ var step_testing_delay  = 250,
 var suite = vows.describe("metric");
 
 var nowish       = Date.now(),
-    nowish_floor = (10e3 * Math.floor(nowish/10e3)),
+    nowish_floor = tiers[10e3].floor(nowish),
     nowish_stop  = nowish_floor + 30e3,
     thenish = Date.UTC(2011, 6, 18, 0, 0, 0);
 var invalid_expression_error = { error: { message: 'Expected "(", "-", "distinct", "max", "median", "min", "sum" or number but "D" found.', column: 1, line: 1,  name: 'SyntaxError' }};
@@ -266,7 +266,7 @@ function metricTest(request, expected) {
 
     function get_metrics_with_delay(depth){ return function(){
       var actual   = [],
-          timeout  = setTimeout(function() { console.log(" TIMING OUT NOW", request ); cb(new Error("Time's up!")); }, 20000),
+          timeout  = setTimeout(function() { console.log(" TIMING OUT NOW", request ); cb(new Error("Time's up!")); }, 40e3),
           cb       = this.callback,
           req      = Object.create(request),
           getter   = arguments[depth];
