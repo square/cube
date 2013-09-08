@@ -2,7 +2,8 @@ process.env.TZ = 'UTC';
 
 var util = require("util"),
     cube = require("../../"), // replace with require("cube")
-    options = require("./random-config");
+    options = require("./random-config"),
+    setImmediate = require("../../set-immediate");
 
 util.log("starting emitter");
 var emitter = cube.emitter(options["collector"]);
@@ -28,7 +29,7 @@ function insert(start){
       value: value += Math.random() - .5
     }
   });
-  process.nextTick(function(){ insert(start + step) });
+  setImmediate(function(){ insert(start + step) });
 }
 
 insert(start);
